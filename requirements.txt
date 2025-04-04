@@ -1,6 +1,5 @@
 requests
-flask 
-flask-mail 
+flask
 flask-bcrypt 
 flask-sqlalchemy 
 python-dotenv

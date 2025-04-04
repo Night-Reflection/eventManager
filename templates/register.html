@@ -3,6 +3,17 @@
 {% block content %}
     <div class="register-container">
         <h2 class="text-center fw-bold">Register</h2>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="alert alert-danger">
+                <ul>
+                    {% for category, message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+    {% endwith %}
         <form method="POST" action="/register">
             <div class="mb-3">
                 <label for="username" class="form-label">Username:</label>

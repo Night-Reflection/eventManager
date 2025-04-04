@@ -94,7 +94,7 @@ def verify():
         return redirect(url_for('home'))
     
     flash("Invalid verification code!", "danger")
-    return redirect(url_for('register'))
+    return render_template("verify.html")
 
 def send_verification_email(email, verification_code):
     try:

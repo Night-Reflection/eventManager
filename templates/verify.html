@@ -3,6 +3,17 @@
 {% block content %}
 <div class="verify-container">
     <h2 class="text-center fw-bold">Email Verification</h2>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="alert alert-danger">
+            <ul>
+                {% for category, message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+{% endwith %}
     <p class="text-muted text-center">We've sent a verification code to <strong>{{ email }}</strong>. Please enter it below.</p>
     <form method="POST" action="/verify">
         <div class="mb-3">
