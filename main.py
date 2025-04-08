@@ -110,8 +110,36 @@ def send_verification_email(email, verification_code):
                             "Email": email
                         }
                     ],
-                    "Subject": "Your verification code",
-                    "TextPart": f"Hello,\n\nYour verification code is: {verification_code}\n\nThank you for registering!"
+                    "Subject": "Verification Code for Your EventManager Registration",
+                    "HTMLPart": f"""
+                    <html>
+                    <body style="font-family: Arial, sans-serif; color: #333;">
+                        <div style="background-color: #f4f4f9; padding: 20px; border-radius: 8px;">
+                            <h2 style="color: #4CAF50; text-align: center;">Welcome to EventManager!</h2>
+                            <p style="font-size: 16px; color: #555;">
+                                Dear User,<br><br>
+                                Thank you for registering with EventManager! We are thrilled to have you join us.
+                            </p>
+                            <p style="font-size: 16px; color: #555;">
+                                To complete your registration, please use the verification code below:
+                            </p>
+                            <div style="background-color: #e7f4e7; padding: 15px; font-size: 20px; font-weight: bold; text-align: center; color: #333;">
+                                {verification_code}
+                            </div>
+                            <p style="font-size: 16px; color: #555;">
+                                If you did not request this code, please disregard this email. Your security is important to us.
+                            </p>
+                            <p style="font-size: 16px; color: #555;">
+                                Thank you for choosing EventManager! We look forward to helping you manage your events with ease.
+                            </p>
+                            <footer style="text-align: center; font-size: 14px; color: #aaa;">
+                                Best regards,<br>
+                                The EventManager Team
+                            </footer>
+                        </div>
+                    </body>
+                    </html>
+                    """
                 }
             ]
         }
