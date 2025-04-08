@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="text-center">
+    <h2 class="fw-bold">Settings</h2>
+    <p class="lead">Update your contact information</p>
+
+    <form method="POST" action="{{ url_for('update_settings') }}">
+        <div class="mb-3">
+            <label for="email" class="form-label">Email Address</label>
+            <input type="email" class="form-control" id="email" name="email" value="{{ session['email'] }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="phone" class="form-label">Phone Number</label>
+            <input type="text" class="form-control" id="phone" name="phone" value="{{ session['phone'] }}" required>
+        </div>
+        <button type="submit" class="btn btn-success">Save Settings</button>
+    </form>
+</div>
+{% endblock %}

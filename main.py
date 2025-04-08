@@ -22,10 +22,21 @@ class User(db.Model):
     username = db.Column(db.String(50), unique=True, nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
+    phone_number = db.Column(db.String(255), unique=True ,nullable=True)
+
+class Event(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    date = db.Column(db.String(10), nullable=False)
+    time = db.Column(db.String(5), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    user = db.relationship('User', backref=db.backref('events', lazy=True))
 
 def create_tables():
     with app.app_context():
         db.create_all()
+    print("Databases created")
 
 create_tables()
 
@@ -150,6 +161,81 @@ def send_verification_email(email, verification_code):
             print(f"Failed to send email: {result.status_code} - {result.text}")
     except Exception as e:
         print(f"Error sending email: {e}")
+
+@app.route('/events')
+def events():
+    user = User.query.filter_by(username=session['username']).first()
+    if user:
+        events = Event.query.filter_by(user_id=user.id).all()
+        return render_template('events.html', events=events)
+    flash("No events found!", "danger")
+    return redirect(url_for('home'))
+
+@app.route('/edit_event/<int:event_id>', methods=['GET', 'POST'])
+def edit_event(event_id):
+    event = Event.query.get_or_404(event_id)
+    if request.method == 'POST':
+        event.title = request.form['event_title']
+        event.date = request.form['event_date']
+        event.time = request.form['event_time']
+        db.session.commit()
+        flash("Event updated successfully!", "success")
+        return redirect(url_for('events'))
+    return render_template('edit_event.html', event=event)
+
+@app.route('/delete_event/<int:event_id>')
+def delete_event(event_id):
+    event = Event.query.get_or_404(event_id)
+    db.session.delete(event)
+    db.session.commit()
+    flash("Event deleted successfully!", "success")
+    return redirect(url_for('events'))
+
+@app.route('/calendar', methods=['GET', 'POST'])
+def calendar():
+    if request.method == 'POST':
+        event_title = request.form['event_title']
+        event_date = request.form['event_date']
+        event_time = request.form['event_time']
+
+        user = User.query.filter_by(username=session['username']).first()
+        if user:
+            event = {
+                'title': event_title,
+                'date': event_date,
+                'time': event_time,
+                'user_id': user.id
+            }
+            db.session.add(event)
+            db.session.commit()
+            flash("Event added successfully!", "success")
+            return redirect(url_for('calendar'))
+        flash("Error adding event!", "danger")
+    return render_template('calendar.html')
+
+@app.route('/participants')
+def participants():
+    return render_template('participants.html')
+
+@app.route('/settings', methods=['GET', 'POST'])
+def settings():
+    if request.method == 'POST':
+        email = request.form['email']
+        phone = request.form['phone']
+
+        user = User.query.filter_by(username=session['username']).first()
+        if user:
+            user.email = email
+            user.phone_number = phone
+            db.session.commit()
+
+            session['email'] = email
+            session['phone'] = phone
+
+            flash("Settings updated successfully!", "success")
+            return redirect(url_for('settings'))
+        flash("Error updating settings!", "danger")
+    return render_template('settings.html')
 
 if __name__ == "__main__":
     app.run(debug=True)

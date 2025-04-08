@@ -22,3 +22,19 @@ button {
     font-size: 18px;
     border-radius: 5px;
 }
+
+.btn-group {
+    margin: 20px 0;
+}
+
+.navbar {
+    margin-bottom: 20px;
+}
+
+.navbar-brand {
+    font-weight: bold;
+}
+
+.container {
+    margin-top: 20px;
+}

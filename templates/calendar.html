@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="text-center">
+    <h2 class="fw-bold">Your Personal Calendar</h2>
+    <p class="lead">Add events to your calendar</p>
+
+    <!-- Calendar Display (You can use JavaScript to create this) -->
+    <div id="calendar" class="mb-4"></div>
+
+    <!-- Add Event Form -->
+    <form method="POST" action="{{ url_for('add_event') }}">
+        <div class="mb-3">
+            <label for="event_title" class="form-label">Event Title</label>
+            <input type="text" class="form-control" id="event_title" name="event_title" required>
+        </div>
+        <div class="mb-3">
+            <label for="event_date" class="form-label">Event Date</label>
+            <input type="date" class="form-control" id="event_date" name="event_date" required>
+        </div>
+        <div class="mb-3">
+            <label for="event_time" class="form-label">Event Time</label>
+            <input type="time" class="form-control" id="event_time" name="event_time" required>
+        </div>
+        <button type="submit" class="btn btn-success">Add Event</button>
+    </form>
+</div>
+
+<script>
+// JavaScript to initialize the calendar (using FullCalendar or another calendar library)
+// You can use a library like FullCalendar here to display the calendar.
+</script>
+{% endblock %}

@@ -2,8 +2,18 @@
 
 {% block content %}
 <div class="text-center">
-    <h2 class="fw-bold">Welcome, {{ session['username'] }}!</h2>
-    <p class="lead">You are successfully logged in.</p>
+    <h2 class="fw-bold">Welcome to EventManager, {{ session['username'] }}!</h2>
+    <p class="lead">Manage your events and settings.</p>
+
+    <!-- Navigation bar with buttons -->
+    <div class="btn-group mb-4" role="group" aria-label="Event Management Buttons">
+        <a href="{{ url_for('home') }}" class="btn btn-primary">Home</a>
+        <a href="{{ url_for('events') }}" class="btn btn-primary">Events</a>
+        <a href="{{ url_for('calendar') }}" class="btn btn-primary">Calendar</a>
+        <a href="{{ url_for('participants') }}" class="btn btn-primary">Participants</a>
+        <a href="{{ url_for('settings') }}" class="btn btn-primary">Settings</a>
+    </div>
+
     <a href="{{ url_for('login') }}" class="btn btn-danger">Logout</a>
 </div>
 {% endblock %}
