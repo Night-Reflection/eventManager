@@ -22,7 +22,7 @@ class User(db.Model):
     username = db.Column(db.String(50), unique=True, nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
-    phone_number = db.Column(db.String(255), unique=True ,nullable=True)
+    phone_number = db.Column(db.String(255), unique=True, nullable=True)
 
 class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -181,7 +181,7 @@ def edit_event(event_id):
         db.session.commit()
         flash("Event updated successfully!", "success")
         return redirect(url_for('events'))
-    return render_template('edit_event.html', event=event)
+    return render_template('add_event.html', event=event)
 
 @app.route('/delete_event/<int:event_id>')
 def delete_event(event_id):
@@ -198,15 +198,14 @@ def calendar():
         event_date = request.form['event_date']
         event_time = request.form['event_time']
 
+        if not event_title or not event_date or not event_time:
+            flash("Please fill in all fields!", "danger")
+            return redirect(url_for('calendar'))
+
         user = User.query.filter_by(username=session['username']).first()
         if user:
-            event = {
-                'title': event_title,
-                'date': event_date,
-                'time': event_time,
-                'user_id': user.id
-            }
-            db.session.add(event)
+            new_event = Event(title=event_title, date=event_date, time=event_time, user_id=user.id)
+            db.session.add(new_event)
             db.session.commit()
             flash("Event added successfully!", "success")
             return redirect(url_for('calendar'))
