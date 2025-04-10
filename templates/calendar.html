@@ -2,28 +2,37 @@
 
 {% block content %}
 <div class="text-center">
-    <h2 class="fw-bold">Your Personal Calendar</h2>
+    <h2 class="fw-bold">Your Personal Event Creator</h2>
     <p class="lead">Add events to your calendar</p>
 
     <div id="calendar" class="mb-4"></div>
 
-    <form method="POST" action="{{ url_for('add_event') }}">
+    <form method="POST" action="{{ url_for('edit_event', event_id=event.id) if event else url_for('Create_Event') }}">
         <div class="mb-3">
             <label for="event_title" class="form-label">Event Title</label>
-            <input type="text" class="form-control" id="event_title" name="event_title" required>
+            <input type="text" class="form-control" id="event_title" name="event_title" value="{{ event.title if event else '' }}" required>
         </div>
         <div class="mb-3">
             <label for="event_date" class="form-label">Event Date</label>
-            <input type="date" class="form-control" id="event_date" name="event_date" required>
+            <input type="date" class="form-control" id="event_date" name="event_date" value="{{ event.date if event else '' }}" required>
         </div>
         <div class="mb-3">
             <label for="event_time" class="form-label">Event Time</label>
-            <input type="time" class="form-control" id="event_time" name="event_time" required>
+            <input type="time" class="form-control" id="event_time" name="event_time" value="{{ event.time if event else '' }}" required>
         </div>
-        <button type="submit" class="btn btn-success">Add Event</button>
+
+        <div class="mb-3">
+            <label for="event_description" class="form-label">Event Description</label>
+            <textarea class="form-control" id="event_description" name="event_description">{{ event.description if event else '' }}</textarea>
+        </div>
+        <div class="mb-3">
+            <label for="event_location" class="form-label">Event Location</label>
+            <input type="text" class="form-control" id="event_location" name="event_location" value="{{ event.location if event else '' }}">
+        </div>
+
+        <button type="submit" class="btn btn-success">
+            {{ 'Update Event' if event else 'Add Event' }}
+        </button>
     </form>
 </div>
-
-<script>
-</script>
 {% endblock %}

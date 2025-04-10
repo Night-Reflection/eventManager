@@ -5,6 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from mailjet_rest import Client
 from dotenv import load_dotenv
+from datetime import datetime, timedelta
 
 load_dotenv()
 
@@ -29,9 +30,12 @@ class Event(db.Model):
     title = db.Column(db.String(100), nullable=False)
     date = db.Column(db.String(10), nullable=False)
     time = db.Column(db.String(5), nullable=False)
+    description = db.Column(db.String(255), nullable=True)  # New field
+    location = db.Column(db.String(255), nullable=True)  # New field
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     user = db.relationship('User', backref=db.backref('events', lazy=True))
+
 
 def create_tables():
     with app.app_context():
@@ -55,6 +59,7 @@ def login():
         
         if user and bcrypt.check_password_hash(user.password, password):
             session['username'] = username
+            session['user_id'] = user.id
             return redirect(url_for('home'))
         else:
             flash("Invalid username or password!", "danger")
@@ -162,14 +167,61 @@ def send_verification_email(email, verification_code):
     except Exception as e:
         print(f"Error sending email: {e}")
 
-@app.route('/events')
+@app.route('/events', methods=['GET'])
 def events():
-    user = User.query.filter_by(username=session['username']).first()
-    if user:
-        events = Event.query.filter_by(user_id=user.id).all()
-        return render_template('events.html', events=events)
-    flash("No events found!", "danger")
-    return redirect(url_for('home'))
+    # Get today's date
+    today = datetime.today()
+
+    view = request.args.get('view', 'weekly')
+    direction = request.args.get('direction', 'current')
+
+    start_of_week = today - timedelta(days=today.weekday())
+    end_of_week = start_of_week + timedelta(days=6)
+
+    current_date = today.strftime('%d.%m.%Y')
+    start_of_week_str = start_of_week.strftime('%d.%m.%Y')
+    end_of_week_str = end_of_week.strftime('%d.%m.%Y')
+
+    if direction == 'prev':
+        start_of_week -= timedelta(weeks=1)
+        end_of_week -= timedelta(weeks=1)
+    elif direction == 'next':
+        start_of_week += timedelta(weeks=1)
+        end_of_week += timedelta(weeks=1)
+    elif direction == 'current':
+        pass
+
+    week_events = Event.query.filter(Event.user_id == session['user_id'],
+                                      Event.date >= start_of_week.strftime('%Y-%m-%d'),
+                                      Event.date <= end_of_week.strftime('%Y-%m-%d')).all()
+
+    if view == 'daily':
+        day_events = Event.query.filter_by(user_id=session['user_id'], date=today.strftime('%Y-%m-%d')).all()
+        return render_template('events.html', 
+                               day_events=day_events, 
+                               view=view,
+                               current_date=current_date,
+                               start_of_week=start_of_week_str,
+                               end_of_week=end_of_week_str)
+
+    week_days = []
+    for i in range(7):
+        day = start_of_week + timedelta(days=i)
+        day_events = Event.query.filter_by(user_id=session['user_id']).filter(Event.date == day.strftime('%Y-%m-%d')).all()
+        week_days.append({
+            'name': day.strftime('%A'),
+            'date': day.strftime('%Y-%m-%d'),
+            'events': day_events
+        })
+
+    return render_template('events.html', 
+                           week_events=week_events,
+                           week_days=week_days, 
+                           view=view,
+                           current_date=current_date,
+                           start_of_week=start_of_week_str,
+                           end_of_week=end_of_week_str)
+
 
 @app.route('/edit_event/<int:event_id>', methods=['GET', 'POST'])
 def edit_event(event_id):
@@ -178,10 +230,13 @@ def edit_event(event_id):
         event.title = request.form['event_title']
         event.date = request.form['event_date']
         event.time = request.form['event_time']
+        event.description = request.form.get('event_description')
+        event.location = request.form.get('event_location')
         db.session.commit()
         flash("Event updated successfully!", "success")
         return redirect(url_for('events'))
-    return render_template('add_event.html', event=event)
+    
+    return render_template('edit_event.html', event=event)
 
 @app.route('/delete_event/<int:event_id>')
 def delete_event(event_id):
@@ -191,26 +246,56 @@ def delete_event(event_id):
     flash("Event deleted successfully!", "success")
     return redirect(url_for('events'))
 
-@app.route('/calendar', methods=['GET', 'POST'])
-def calendar():
+@app.route('/Create_Event', methods=['GET', 'POST'])
+def Create_Event():
+    if 'user_id' not in session:
+        flash("Please log in to access this page.", "danger")
+        return redirect(url_for('login'))
+
     if request.method == 'POST':
         event_title = request.form['event_title']
         event_date = request.form['event_date']
         event_time = request.form['event_time']
+        event_description = request.form.get('event_description')
+        event_location = request.form.get('event_location')
 
         if not event_title or not event_date or not event_time:
-            flash("Please fill in all fields!", "danger")
-            return redirect(url_for('calendar'))
+            flash("Please fill in all required fields!", "danger")
+            return redirect(url_for('Create_Event'))
 
-        user = User.query.filter_by(username=session['username']).first()
+        user = User.query.filter_by(id=session['user_id']).first()
         if user:
-            new_event = Event(title=event_title, date=event_date, time=event_time, user_id=user.id)
+            new_event = Event(
+                title=event_title,
+                date=event_date,
+                time=event_time,
+                description=event_description,
+                location=event_location,
+                user_id=user.id
+            )
             db.session.add(new_event)
             db.session.commit()
             flash("Event added successfully!", "success")
-            return redirect(url_for('calendar'))
+            return redirect(url_for('Create_Event'))
+
         flash("Error adding event!", "danger")
-    return render_template('calendar.html')
+
+    today = datetime.today()
+    start_of_week = today - timedelta(days=today.weekday())
+    end_of_week = start_of_week + timedelta(days=6)
+
+    week_days = []
+    for i in range(7):
+        day = start_of_week + timedelta(days=i)
+        day_events = Event.query.filter_by(user_id=session['user_id']).filter(Event.date == day.strftime('%Y-%m-%d')).all()  # Use user_id
+        week_days.append({
+            'name': day.strftime('%A'),
+            'date': day.strftime('%Y-%m-%d'),
+            'events': day_events
+        })
+
+    return render_template('calendar.html', week_days=week_days)
+
 
 @app.route('/participants')
 def participants():
@@ -218,11 +303,12 @@ def participants():
 
 @app.route('/settings', methods=['GET', 'POST'])
 def settings():
+    user = User.query.filter_by(username=session['username']).first()
+    
     if request.method == 'POST':
         email = request.form['email']
         phone = request.form['phone']
 
-        user = User.query.filter_by(username=session['username']).first()
         if user:
             user.email = email
             user.phone_number = phone
@@ -234,7 +320,8 @@ def settings():
             flash("Settings updated successfully!", "success")
             return redirect(url_for('settings'))
         flash("Error updating settings!", "danger")
-    return render_template('settings.html')
+    
+    return render_template('settings.html', user=user)
 
 if __name__ == "__main__":
     app.run(debug=True)

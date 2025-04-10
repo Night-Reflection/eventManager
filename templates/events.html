@@ -2,22 +2,147 @@
 
 {% block content %}
 <div class="text-center">
-    <h2 class="fw-bold">Upcoming Events</h2>
-    <p class="lead">Here are the events you've created</p>
+    <h2 class="fw-bold">Your Calendar</h2>
+    <p class="lead">View and manage your upcoming events</p>
 
-    <div class="list-group">
-        {% for event in events %}
-        <div class="list-group-item d-flex justify-content-between align-items-center">
-            <div>
-                <h5>{{ event.title }}</h5>
-                <p>{{ event.date }} at {{ event.time }}</p>
-            </div>
-            <div>
-                <a href="{{ url_for('edit_event', event_id=event.id) }}" class="btn btn-warning btn-sm">Edit</a>
-                <a href="{{ url_for('delete_event', event_id=event.id) }}" class="btn btn-danger btn-sm">Delete</a>
+    <div class="mb-3">
+        <a href="{{ url_for('events', direction='prev', view=view) }}" class="btn btn-primary">Previous Week</a>
+        <a href="{{ url_for('events', direction='next', view=view) }}" class="btn btn-primary">Next Week</a>
+        <a href="{{ url_for('events', direction='current', view=view) }}" class="btn btn-info">Go to Current Week</a>
+    </div>
+
+    {% if view == 'daily' %}
+    <div class="mb-3">
+        <a href="{{ url_for('events', direction='prev', view='daily') }}" class="btn btn-primary">Previous Day</a>
+        <a href="{{ url_for('events', direction='next', view='daily') }}" class="btn btn-primary">Next Day</a>
+    </div>
+    {% endif %}
+
+    <div class="mb-3">
+        <a href="{{ url_for('events', view='daily', direction='current') }}" class="btn btn-secondary">Daily View</a>
+        <a href="{{ url_for('events', view='weekly', direction='current') }}" class="btn btn-secondary">Weekly View</a>
+    </div>
+
+    {% if view == 'weekly' %}
+    <div class="row">
+        {% for day in week_days %}
+        <div class="col">
+            <h5 class="text-center">{{ day.name }}<br>{{ day.date }}</h5>
+            <div class="calendar-day">
+                {% for hour in range(24) %}
+                <div class="time-slot">
+                    <div class="time-label">{{ '{:02d}:00'.format(hour) }}</div>
+
+                    {% for event in day.events %}
+                        {% if event.time == '{:02d}:00'.format(hour) %}
+                        <div class="event" data-bs-toggle="modal" data-bs-target="#eventModal" data-event-id="{{ event.id }}">
+                            <span>{{ event.title }}</span>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                {% endfor %}
             </div>
         </div>
         {% endfor %}
     </div>
+    {% endif %}
+
+    {% if view == 'daily' %}
+    <div class="calendar-day">
+        {% for hour in range(24) %}
+        <div class="time-slot">
+            <div class="time-label">{{ '{:02d}:00'.format(hour) }}</div>
+
+            {% for event in day_events %}
+                {% if event.time == '{:02d}:00'.format(hour) %}
+                <div class="event" data-bs-toggle="modal" data-bs-target="#eventModal" data-event-id="{{ event.id }}">
+                    <span>{{ event.title }}</span>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <a href="{{ url_for('Create_Event') }}" class="btn btn-success mt-4">Create New Event</a>
 </div>
+
+<div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="eventModalLabel">Event Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <h6 id="eventTitle"></h6>
+        <p><strong>Time: </strong><span id="eventTime"></span></p>
+        <p><strong>Description: </strong><span id="eventDescription"></span></p>
+        <p><strong>Location: </strong><span id="eventLocation"></span></p>
+        <a href="" class="btn btn-warning" id="editEventBtn">Edit Event</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+    .calendar-day {
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 10px;
+        height: 500px;
+        overflow-y: auto;
+    }
+
+    .time-slot {
+        display: flex;
+        align-items: center;
+        padding: 5px;
+        border-bottom: 1px solid #ddd;
+        position: relative;
+    }
+
+    .time-label {
+        width: 80px;
+        text-align: right;
+        font-weight: bold;
+    }
+
+    .event {
+        background-color: #f1f1f1;
+        padding: 5px;
+        border-radius: 4px;
+        margin-left: 10px;
+        width: 80%;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+        cursor: pointer;
+    }
+
+    .btn {
+        margin: 10px;
+    }
+</style>
+
+<script>
+const modal = document.getElementById('eventModal');
+modal.addEventListener('show.bs.modal', function (event) {
+    const button = event.relatedTarget;
+    const eventId = button.getAttribute('data-event-id');
+    
+    fetch(`/event/details/${eventId}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('eventTitle').textContent = data.title;
+            document.getElementById('eventTime').textContent = data.time;
+            document.getElementById('eventDescription').textContent = data.description;
+            document.getElementById('eventLocation').textContent = data.location;
+            document.getElementById('editEventBtn').href = `/edit_event/${eventId}`;
+        });
+});
+</script>
+
 {% endblock %}

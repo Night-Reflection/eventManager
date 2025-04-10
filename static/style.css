@@ -38,3 +38,13 @@ button {
 .container {
     margin-top: 20px;
 }
+.hour-slot {
+    border-bottom: 1px solid #ddd;
+}
+
+.event {
+    background-color: #f1f1f1;
+    padding: 5px;
+    border-radius: 5px;
+    font-size: 12px;
+}
