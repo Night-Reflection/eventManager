@@ -30,17 +30,20 @@
             <h5 class="text-center">{{ day.name }}<br>{{ day.date }}</h5>
             <div class="calendar-day">
                 {% for hour in range(24) %}
-                <div class="time-slot">
-                    <div class="time-label">{{ '{:02d}:00'.format(hour) }}</div>
+                    <div class="time-slot">
+                        <div class="time-label">{{ '{:02d}:00'.format(hour) }}</div>
 
-                    {% for event in day.events %}
-                        {% if event.time == '{:02d}:00'.format(hour) %}
-                        <div class="event" data-bs-toggle="modal" data-bs-target="#eventModal" data-event-id="{{ event.id }}">
-                            <span>{{ event.title }}</span>
-                        </div>
-                        {% endif %}
-                    {% endfor %}
-                </div>
+                        {% for event in day.events %}
+                            {% set event_hour = event.time.split(":")[0]|int %}
+                            {% set event_minute = event.time.split(":")[1]|int %}
+                            
+                            {% if event_hour == hour %}
+                                <div class="event" data-bs-toggle="modal" data-bs-target="#eventModal" data-event-id="{{ event.id }}">
+                                    <span>{{ event.title }} ({{ event.time }})</span>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
                 {% endfor %}
             </div>
         </div>
@@ -49,19 +52,27 @@
     {% endif %}
 
     {% if view == 'daily' %}
+    <h3>{{ current_day.name }}<br>{{ current_day.date }}</h3>
+    
     <div class="calendar-day">
         {% for hour in range(24) %}
-        <div class="time-slot">
-            <div class="time-label">{{ '{:02d}:00'.format(hour) }}</div>
+            <div class="time-slot">
+                <div class="time-label">{{ '{:02d}:00'.format(hour) }}</div>
 
-            {% for event in day_events %}
-                {% if event.time == '{:02d}:00'.format(hour) %}
-                <div class="event" data-bs-toggle="modal" data-bs-target="#eventModal" data-event-id="{{ event.id }}">
-                    <span>{{ event.title }}</span>
-                </div>
-                {% endif %}
-            {% endfor %}
-        </div>
+                {% for event in current_day.events %}
+                    {% set event_hour = event.time.split(":")[0]|int %}
+                    {% set event_minute = event.time.split(":")[1]|int %}
+                    
+                    {% if event_hour == hour %}
+                        <div class="event" 
+                             data-bs-toggle="modal" 
+                             data-bs-target="#eventModal" 
+                             data-event-id="{{ event.id }}">
+                            <span>{{ event.title }} ({{ event.time }})</span>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
         {% endfor %}
     </div>
     {% endif %}
@@ -94,13 +105,17 @@
         padding: 10px;
         height: 500px;
         overflow-y: auto;
+        position: relative;
     }
 
     .time-slot {
         display: flex;
-        align-items: center;
+        flex-direction: column;
+        align-items: flex-start;
         padding: 5px;
         border-bottom: 1px solid #ddd;
+        position: relative;
+        height: 100px;
         position: relative;
     }
 
@@ -108,18 +123,24 @@
         width: 80px;
         text-align: right;
         font-weight: bold;
+        position: absolute;
+        left: 10px;
+        top: 5px;
     }
 
     .event {
         background-color: #f1f1f1;
-        padding: 5px;
+        padding: 10px;
         border-radius: 4px;
-        margin-left: 10px;
-        width: 80%;
+        margin-top: 10px;
+        width: calc(100% - 20px);
         text-overflow: ellipsis;
         white-space: nowrap;
         overflow: hidden;
         cursor: pointer;
+        position: relative;
+        height: 40px;
+        margin-bottom: 5px;
     }
 
     .btn {
@@ -128,6 +149,7 @@
 </style>
 
 <script>
+// Event Modal Populator
 const modal = document.getElementById('eventModal');
 modal.addEventListener('show.bs.modal', function (event) {
     const button = event.relatedTarget;

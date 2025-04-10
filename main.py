@@ -169,18 +169,21 @@ def send_verification_email(email, verification_code):
 
 @app.route('/events', methods=['GET'])
 def events():
-    # Get today's date
     today = datetime.today()
 
     view = request.args.get('view', 'weekly')
     direction = request.args.get('direction', 'current')
 
-    start_of_week = today - timedelta(days=today.weekday())
-    end_of_week = start_of_week + timedelta(days=6)
+    if 'start_of_week' not in session:
+        start_of_week = today - timedelta(days=today.weekday())
+        end_of_week = start_of_week + timedelta(days=6)
+        session['start_of_week'] = start_of_week.strftime('%d.%m.%Y')
+        session['end_of_week'] = end_of_week.strftime('%d.%m.%Y')
+        session['current_day'] = today.strftime('%d.%m.%Y')
 
-    current_date = today.strftime('%d.%m.%Y')
-    start_of_week_str = start_of_week.strftime('%d.%m.%Y')
-    end_of_week_str = end_of_week.strftime('%d.%m.%Y')
+    start_of_week = datetime.strptime(session['start_of_week'], '%d.%m.%Y')
+    end_of_week = datetime.strptime(session['end_of_week'], '%d.%m.%Y')
+    current_date = session['current_day']
 
     if direction == 'prev':
         start_of_week -= timedelta(weeks=1)
@@ -191,18 +194,26 @@ def events():
     elif direction == 'current':
         pass
 
-    week_events = Event.query.filter(Event.user_id == session['user_id'],
-                                      Event.date >= start_of_week.strftime('%Y-%m-%d'),
-                                      Event.date <= end_of_week.strftime('%Y-%m-%d')).all()
+    session['start_of_week'] = start_of_week.strftime('%d.%m.%Y')
+    session['end_of_week'] = end_of_week.strftime('%d.%m.%Y')
+    session['current_day'] = today.strftime('%d.%m.%Y')
 
     if view == 'daily':
         day_events = Event.query.filter_by(user_id=session['user_id'], date=today.strftime('%Y-%m-%d')).all()
+
+        current_day = {
+            'name': today.strftime('%A'),
+            'date': today.strftime('%d.%m.%Y'),
+            'events': day_events
+        }
+
         return render_template('events.html', 
                                day_events=day_events, 
                                view=view,
+                               current_day=current_day,
                                current_date=current_date,
-                               start_of_week=start_of_week_str,
-                               end_of_week=end_of_week_str)
+                               start_of_week=start_of_week.strftime('%d.%m.%Y'),
+                               end_of_week=end_of_week.strftime('%d.%m.%Y'))
 
     week_days = []
     for i in range(7):
@@ -215,13 +226,11 @@ def events():
         })
 
     return render_template('events.html', 
-                           week_events=week_events,
-                           week_days=week_days, 
+                           week_days=week_days,
                            view=view,
                            current_date=current_date,
-                           start_of_week=start_of_week_str,
-                           end_of_week=end_of_week_str)
-
+                           start_of_week=start_of_week.strftime('%d.%m.%Y'),
+                           end_of_week=end_of_week.strftime('%d.%m.%Y'))
 
 @app.route('/edit_event/<int:event_id>', methods=['GET', 'POST'])
 def edit_event(event_id):
