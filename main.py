@@ -1,6 +1,6 @@
 import random
 import os
-from flask import Flask, render_template, request, session, redirect, url_for, flash
+from flask import Flask, render_template, request, session, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from mailjet_rest import Client
@@ -30,8 +30,8 @@ class Event(db.Model):
     title = db.Column(db.String(100), nullable=False)
     date = db.Column(db.String(10), nullable=False)
     time = db.Column(db.String(5), nullable=False)
-    description = db.Column(db.String(255), nullable=True)  # New field
-    location = db.Column(db.String(255), nullable=True)  # New field
+    description = db.Column(db.String(255), nullable=True)
+    location = db.Column(db.String(255), nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     user = db.relationship('User', backref=db.backref('events', lazy=True))
@@ -232,20 +232,35 @@ def events():
                            start_of_week=start_of_week.strftime('%d.%m.%Y'),
                            end_of_week=end_of_week.strftime('%d.%m.%Y'))
 
+@app.route('/event/details/<int:event_id>', methods=['GET'])
+def event_details(event_id):
+    event = Event.query.get_or_404(event_id)
+    return jsonify({
+        'id': event.id,
+        'title': event.title,
+        'time': event.time,
+        'description': event.description,
+        'location': event.location
+    })
+
 @app.route('/edit_event/<int:event_id>', methods=['GET', 'POST'])
 def edit_event(event_id):
     event = Event.query.get_or_404(event_id)
+    
     if request.method == 'POST':
         event.title = request.form['event_title']
         event.date = request.form['event_date']
         event.time = request.form['event_time']
         event.description = request.form.get('event_description')
         event.location = request.form.get('event_location')
+
         db.session.commit()
+        
         flash("Event updated successfully!", "success")
+        
         return redirect(url_for('events'))
     
-    return render_template('edit_event.html', event=event)
+    return render_template('calendar.html', event=event)
 
 @app.route('/delete_event/<int:event_id>')
 def delete_event(event_id):
@@ -285,7 +300,7 @@ def Create_Event():
             db.session.add(new_event)
             db.session.commit()
             flash("Event added successfully!", "success")
-            return redirect(url_for('Create_Event'))
+            return redirect(url_for('events'))
 
         flash("Error adding event!", "danger")
 
@@ -296,7 +311,7 @@ def Create_Event():
     week_days = []
     for i in range(7):
         day = start_of_week + timedelta(days=i)
-        day_events = Event.query.filter_by(user_id=session['user_id']).filter(Event.date == day.strftime('%Y-%m-%d')).all()  # Use user_id
+        day_events = Event.query.filter_by(user_id=session['user_id']).filter(Event.date == day.strftime('%Y-%m-%d')).all()
         week_days.append({
             'name': day.strftime('%A'),
             'date': day.strftime('%Y-%m-%d'),
@@ -304,7 +319,6 @@ def Create_Event():
         })
 
     return render_template('calendar.html', week_days=week_days)
-
 
 @app.route('/participants')
 def participants():

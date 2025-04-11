@@ -24,55 +24,56 @@
     </div>
 
     {% if view == 'weekly' %}
-    <div class="row">
-        {% for day in week_days %}
-        <div class="col">
-            <h5 class="text-center">{{ day.name }}<br>{{ day.date }}</h5>
-            <div class="calendar-day">
-                {% for hour in range(24) %}
+    <div class="d-flex justify-content-center">
+        <div class="calendar-week">
+            {% for day in week_days %}
+            <div class="calendar-day col">
+                <h5 class="text-center">{{ day.name }}<br>{{ day.date }}</h5>
+                <div class="calendar-day-content">
+                    {% for hour in range(24) %}
                     <div class="time-slot">
                         <div class="time-label">{{ '{:02d}:00'.format(hour) }}</div>
 
                         {% for event in day.events %}
                             {% set event_hour = event.time.split(":")[0]|int %}
                             {% set event_minute = event.time.split(":")[1]|int %}
-                            
+
                             {% if event_hour == hour %}
-                                <div class="event" data-bs-toggle="modal" data-bs-target="#eventModal" data-event-id="{{ event.id }}">
-                                    <span>{{ event.title }} ({{ event.time }})</span>
-                                </div>
+                            <!-- Attach an onclick handler to each event -->
+                            <div class="event" onclick="showEventModal('{{ event.id }}')">
+                                <span>{{ event.title }} ({{ event.time }})</span>
+                            </div>
                             {% endif %}
                         {% endfor %}
                     </div>
-                {% endfor %}
+                    {% endfor %}
+                </div>
             </div>
+            {% endfor %}
         </div>
-        {% endfor %}
     </div>
     {% endif %}
 
     {% if view == 'daily' %}
     <h3>{{ current_day.name }}<br>{{ current_day.date }}</h3>
-    
+
     <div class="calendar-day">
         {% for hour in range(24) %}
-            <div class="time-slot">
-                <div class="time-label">{{ '{:02d}:00'.format(hour) }}</div>
+        <div class="time-slot">
+            <div class="time-label">{{ '{:02d}:00'.format(hour) }}</div>
 
-                {% for event in current_day.events %}
-                    {% set event_hour = event.time.split(":")[0]|int %}
-                    {% set event_minute = event.time.split(":")[1]|int %}
-                    
-                    {% if event_hour == hour %}
-                        <div class="event" 
-                             data-bs-toggle="modal" 
-                             data-bs-target="#eventModal" 
-                             data-event-id="{{ event.id }}">
-                            <span>{{ event.title }} ({{ event.time }})</span>
-                        </div>
-                    {% endif %}
-                {% endfor %}
-            </div>
+            {% for event in current_day.events %}
+                {% set event_hour = event.time.split(":")[0]|int %}
+                {% set event_minute = event.time.split(":")[1]|int %}
+
+                {% if event_hour == hour %}
+                <!-- Attach an onclick handler to each event -->
+                <div class="event" onclick="showEventModal('{{ event.id }}')">
+                    <span>{{ event.title }} ({{ event.time }})</span>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
         {% endfor %}
     </div>
     {% endif %}
@@ -80,91 +81,172 @@
     <a href="{{ url_for('Create_Event') }}" class="btn btn-success mt-4">Create New Event</a>
 </div>
 
+<!-- POP-UP HTML -->
 <div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="eventModalLabel">Event Details</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <h6 id="eventTitle"></h6>
-        <p><strong>Time: </strong><span id="eventTime"></span></p>
-        <p><strong>Description: </strong><span id="eventDescription"></span></p>
-        <p><strong>Location: </strong><span id="eventLocation"></span></p>
-        <a href="" class="btn btn-warning" id="editEventBtn">Edit Event</a>
-      </div>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eventModalLabel">Event Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h5 id="eventTitle"></h5>
+                <p><strong>Time:</strong> <span id="eventTime"></span></p>
+                <p><strong>Description:</strong> <span id="eventDescription"></span></p>
+                <p><strong>Location:</strong> <span id="eventLocation"></span></p>
+            </div>
+            <div class="modal-footer">
+                <a href="#" id="editEventBtn" class="btn btn-primary">Edit</a>
+                <a href="#" id="deleteEventBtn" class="btn btn-danger">Delete</a>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 
 <style>
-    .calendar-day {
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        padding: 10px;
-        height: 500px;
-        overflow-y: auto;
-        position: relative;
+.calendar-week {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 15px;
+    justify-items: center;
+}
+
+.calendar-day {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 10px;
+    height: 100vh;
+    overflow-y: auto;
+    width: 100%;
+    min-width: 250px;
+    flex-shrink: 0;
+}
+
+.time-slot {
+    border-bottom: 1px solid #ddd;
+    padding: 10px 0;
+}
+
+.time-label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    text-align: left;
+    padding-left: 5px;
+}
+
+.event {
+    background-color: #f1f1f1;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin: 5px 0 5px 5px;
+    word-break: break-word;
+    white-space: normal;
+    overflow-wrap: break-word;
+    cursor: pointer;
+}
+
+.btn {
+    margin: 10px;
+}
+
+/* POP-UP */
+.modal-content {
+    border-radius: 10px;
+    padding: 20px;
+    background-color: #f8f9fa;
+}
+
+.modal-header {
+    border-bottom: 1px solid #e9ecef;
+}
+
+.modal-title {
+    font-size: 1.5rem;
+    color: #343a40;
+}
+
+.btn-close {
+    background-color: #ffffff;
+    border: none;
+    color: #343a40;
+    font-size: 1.2rem;
+}
+
+.modal-body {
+    font-size: 1rem;
+    color: #495057;
+}
+
+.modal-body p {
+    margin-bottom: 1rem;
+}
+
+.modal-body h6 {
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+#editEventBtn, #deleteEventBtn {
+    display: inline-block;
+    width: 100%;
+    margin-top: 10px;
+    text-align: center;
+    font-size: 1.1rem;
+    font-weight: bold;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+#editEventBtn {
+    background-color: #ffc107;
+    color: white;
+}
+
+#editEventBtn:hover {
+    background-color: #e0a800;
+    transition: background-color 0.3s ease;
+}
+
+#deleteEventBtn {
+    background-color: #dc3545;
+    color: white;
+}
+
+#deleteEventBtn:hover {
+    background-color: #c82333;
+    transition: background-color 0.3s ease;
+}
+
+@media (max-width: 576px) {
+    .modal-dialog {
+        max-width: 90%;
     }
 
-    .time-slot {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        padding: 5px;
-        border-bottom: 1px solid #ddd;
-        position: relative;
-        height: 100px;
-        position: relative;
+    .modal-content {
+        padding: 15px;
     }
-
-    .time-label {
-        width: 80px;
-        text-align: right;
-        font-weight: bold;
-        position: absolute;
-        left: 10px;
-        top: 5px;
-    }
-
-    .event {
-        background-color: #f1f1f1;
-        padding: 10px;
-        border-radius: 4px;
-        margin-top: 10px;
-        width: calc(100% - 20px);
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        overflow: hidden;
-        cursor: pointer;
-        position: relative;
-        height: 40px;
-        margin-bottom: 5px;
-    }
-
-    .btn {
-        margin: 10px;
-    }
+}
 </style>
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// Event Modal Populator
-const modal = document.getElementById('eventModal');
-modal.addEventListener('show.bs.modal', function (event) {
-    const button = event.relatedTarget;
-    const eventId = button.getAttribute('data-event-id');
+    // Function to show the POP-UP
+    function showEventModal(eventId) {
+        fetch(`/event/details/${eventId}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('eventTitle').textContent = data.title;
+                document.getElementById('eventTime').textContent = data.time;
+                document.getElementById('eventDescription').textContent = data.description;
+                document.getElementById('eventLocation').textContent = data.location;
+                document.getElementById('editEventBtn').href = `/edit_event/${eventId}`;
+                document.getElementById('deleteEventBtn').href = `/delete_event/${eventId}`;
+                
+                var myModal = new bootstrap.Modal(document.getElementById('eventModal'));
+                myModal.show();
+            })
+            .catch(error => console.error("Error fetching event data:", error));
+    }
+    </script>
     
-    fetch(`/event/details/${eventId}`)
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('eventTitle').textContent = data.title;
-            document.getElementById('eventTime').textContent = data.time;
-            document.getElementById('eventDescription').textContent = data.description;
-            document.getElementById('eventLocation').textContent = data.location;
-            document.getElementById('editEventBtn').href = `/edit_event/${eventId}`;
-        });
-});
-</script>
 
 {% endblock %}
