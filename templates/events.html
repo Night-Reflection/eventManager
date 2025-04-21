@@ -1,9 +1,26 @@
 {% extends "base.html" %}
 
 {% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+    {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+{% endwith %}
 <div class="text-center">
     <h2 class="fw-bold">Your Calendar</h2>
+    
     <p class="lead">View and manage your upcoming events</p>
+
+    <form method="GET" action="{{ url_for('events') }}" class="mb-4 d-flex justify-content-center align-items-center gap-2 flex-wrap">
+        <input type="date" name="jump_to_date" class="form-control w-auto" value="{{ preset }}" required>
+        <input type="hidden" name="view" value="{{ view }}">
+        <button type="submit" class="btn btn-outline-success">Go to Date</button>
+    </form>    
 
     <div class="mb-3">
         <a href="{{ url_for('events', direction='prev', view=view) }}" class="btn btn-primary">Previous Week</a>
@@ -39,7 +56,6 @@
                             {% set event_minute = event.time.split(":")[1]|int %}
 
                             {% if event_hour == hour %}
-                            <!-- Attach an onclick handler to each event -->
                             <div class="event" onclick="showEventModal('{{ event.id }}')">
                                 <span>{{ event.title }} ({{ event.time }})</span>
                             </div>
@@ -67,7 +83,6 @@
                 {% set event_minute = event.time.split(":")[1]|int %}
 
                 {% if event_hour == hour %}
-                <!-- Attach an onclick handler to each event -->
                 <div class="event" onclick="showEventModal('{{ event.id }}')">
                     <span>{{ event.title }} ({{ event.time }})</span>
                 </div>
@@ -107,52 +122,60 @@
 .calendar-week {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 15px;
+    gap: 1rem;
     justify-items: center;
+    width: 100%;
+    overflow-x: auto;
 }
 
 .calendar-day {
     border: 1px solid #ccc;
-    border-radius: 8px;
-    padding: 10px;
-    height: 100vh;
+    border-radius: 0.5em;
+    padding: 1em;
+    height: 100%;
+    max-height: 90vh;
     overflow-y: auto;
     width: 100%;
-    min-width: 250px;
+    min-width: 12em;
     flex-shrink: 0;
+    background-color: #fff;
 }
 
 .time-slot {
     border-bottom: 1px solid #ddd;
-    padding: 10px 0;
+    padding: 0.5em 0;
 }
 
 .time-label {
     font-weight: bold;
-    margin-bottom: 5px;
+    margin-bottom: 0.3em;
     text-align: left;
-    padding-left: 5px;
+    padding-left: 0.3em;
+    font-size: 0.9rem;
 }
 
 .event {
     background-color: #f1f1f1;
-    padding: 8px 12px;
-    border-radius: 6px;
-    margin: 5px 0 5px 5px;
+    padding: 0.5em 0.75em;
+    border-radius: 0.5em;
+    margin: 0.3em 0 0.3em 0.3em;
     word-break: break-word;
     white-space: normal;
     overflow-wrap: break-word;
     cursor: pointer;
+    font-size: 0.95rem;
 }
 
 .btn {
-    margin: 10px;
+    margin: 0.5em;
+    padding: 0.6em 1.2em;
+    font-size: 1rem;
 }
 
 /* POP-UP */
 .modal-content {
-    border-radius: 10px;
-    padding: 20px;
+    border-radius: 0.75em;
+    padding: 1.25em;
     background-color: #f8f9fa;
 }
 
@@ -183,18 +206,18 @@
 
 .modal-body h6 {
     font-weight: bold;
-    margin-bottom: 10px;
+    margin-bottom: 0.6em;
 }
 
 #editEventBtn, #deleteEventBtn {
     display: inline-block;
     width: 100%;
-    margin-top: 10px;
+    margin-top: 0.75em;
     text-align: center;
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: bold;
-    padding: 10px;
-    border-radius: 5px;
+    padding: 0.75em;
+    border-radius: 0.5em;
 }
 
 #editEventBtn {
@@ -217,15 +240,31 @@
     transition: background-color 0.3s ease;
 }
 
-@media (max-width: 576px) {
+@media (max-width: 768px) {
+    .calendar-week {
+        grid-template-columns: repeat(1, 1fr);
+        gap: 1rem;
+    }
+
+    .calendar-day {
+        width: 90%;
+        margin: 0 auto;
+    }
+
     .modal-dialog {
-        max-width: 90%;
+        max-width: 95%;
     }
 
     .modal-content {
-        padding: 15px;
+        padding: 1em;
+    }
+
+    .btn {
+        font-size: 0.95rem;
+        padding: 0.5em 1em;
     }
 }
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 <script>
