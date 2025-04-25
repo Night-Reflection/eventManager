@@ -46,6 +46,7 @@ create_tables()
 
 @app.route("/")
 def home():
+    session.pop('verification_code', None)
     if 'username' in session:
         return render_template("home.html")
     return redirect(url_for('login'))
@@ -94,28 +95,43 @@ def register():
 
         verification_code = str(random.randint(100000, 999999))
         session['verification_code'] = verification_code
-        session['pending_user'] = {"username": username, "email": email, "password": hashed_password}
+        session['pending_user'] = {
+            "username": username,
+            "email": email,
+            "password": hashed_password
+        }
 
         send_verification_email(email, verification_code)
-        return render_template("verify.html", email=email)
+        return render_template("verify.html", email=email, action_url=url_for('verify'))
+
     return render_template("register.html")
 
-@app.route("/verify", methods=['POST'])
-def verify():
-    entered_code = request.form.get('verification_code')
-    
-    if entered_code == session.get('verification_code'):
-        user_data = session.pop('pending_user')
-        new_user = User(username=user_data['username'], email=user_data['email'], password=user_data['password'])
-        db.session.add(new_user)
-        db.session.commit()
 
-        session['username'] = user_data['username']
-        flash("Registration successful!", "success")
-        return redirect(url_for('home'))
+
+@app.route("/verify", methods=['GET', 'POST'])
+def verify():
+    if request.method == 'POST':
+        entered_code = request.form.get('verification_code')
+        
+        if entered_code == session.get('verification_code'):
+            user_data = session.pop('pending_user')
+            new_user = User(
+                username=user_data['username'],
+                email=user_data['email'],
+                password=user_data['password']
+            )
+            db.session.add(new_user)
+            db.session.commit()
+
+            session['username'] = user_data['username']
+            flash("Registration successful!", "success")
+            return redirect(url_for('home'))
+        
+        flash("Invalid verification code!", "danger")
     
-    flash("Invalid verification code!", "danger")
-    return render_template("verify.html")
+    email = session.get('pending_user', {}).get('email', None)
+    return render_template("verify.html", email=email, action_url=url_for('verify'))
+
 
 def send_verification_email(email, verification_code):
     try:
@@ -224,13 +240,23 @@ def events():
             end_of_week=(current_day + timedelta(days=6 - current_day.weekday())).strftime('%d.%m.%Y'),
             preset=current_day.strftime('%Y-%m-%d')
         )
-
+        
     if jump_to_date:
         start_of_week = jump_date - timedelta(days=jump_date.weekday())
         end_of_week = start_of_week + timedelta(days=6)
     else:
-        start_of_week = datetime.strptime(session['start_of_week'], '%d.%m.%Y')
-        end_of_week = datetime.strptime(session['end_of_week'], '%d.%m.%Y')
+        start_of_week = session.get('start_of_week')
+        end_of_week = session.get('end_of_week')
+
+        if not start_of_week or not end_of_week:
+            start_of_week = today - timedelta(days=today.weekday())
+            end_of_week = start_of_week + timedelta(days=6)
+
+        if isinstance(start_of_week, str):
+            start_of_week = datetime.strptime(start_of_week, '%d.%m.%Y')
+
+        if isinstance(end_of_week, str):
+            end_of_week = datetime.strptime(end_of_week, '%d.%m.%Y')
 
         if direction == 'prev':
             start_of_week -= timedelta(weeks=1)
@@ -257,6 +283,8 @@ def events():
             'date': day.strftime('%d-%m-%Y'),
             'events': day_events
         })
+    if 'current_day' not in session:
+        session['current_day'] = jump_date.strftime('%d.%m.%Y') if jump_to_date else today.strftime('%d.%m.%Y')
 
     return render_template(
         'events.html',
@@ -363,24 +391,63 @@ def participants():
 @app.route('/settings', methods=['GET', 'POST'])
 def settings():
     user = User.query.filter_by(username=session['username']).first()
-    
+
     if request.method == 'POST':
-        email = request.form['email']
+        new_email = request.form['email']
         phone = request.form['phone']
 
         if user:
-            user.email = email
+            if new_email != user.email:
+                verification_code = str(random.randint(100000, 999999))
+
+                session['pending_email'] = new_email
+                session['email_verification_code'] = verification_code
+
+                send_verification_email(new_email, verification_code)
+
+                flash("A verification code has been sent to your new email. Please confirm to update your email.", "info")
+                return redirect(url_for('verify_email'))
+
             user.phone_number = phone
             db.session.commit()
 
-            session['email'] = email
             session['phone'] = phone
-
-            flash("Settings updated successfully!", "success")
+            flash("Phone number updated successfully!", "success")
             return redirect(url_for('settings'))
+
         flash("Error updating settings!", "danger")
     
     return render_template('settings.html', user=user)
+
+@app.route('/verify-email', methods=['GET', 'POST'])
+def verify_email():
+    if request.method == 'POST':
+        entered_code = request.form.get('verification_code')
+        expected_code = session.get('email_verification_code')
+        new_email = session.get('pending_email')
+
+        if entered_code == expected_code:
+            user = User.query.filter_by(username=session['username']).first()
+            if user:
+                user.email = new_email
+                db.session.commit()
+
+                session['email'] = new_email
+                flash("Your email has been updated successfully!", "success")
+
+            session.pop('pending_email', None)
+            session.pop('email_verification_code', None)
+
+            return redirect(url_for('settings'))
+
+        flash("Invalid verification code!", "danger")
+
+    return render_template(
+        'verify.html',
+        email=session.get('pending_email'),
+        action_url=url_for('verify_email')
+    )
+
 
 if __name__ == "__main__":
     app.run(debug=True)

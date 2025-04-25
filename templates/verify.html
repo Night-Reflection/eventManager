@@ -2,30 +2,20 @@
 
 {% block content %}
 {% with messages = get_flashed_messages(with_categories=true) %}
-{% if messages %}
-    {% for category, message in messages %}
-        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    {% endfor %}
-{% endif %}
-{% endwith %}
-<div class="verify-container">
-    <h2 class="text-center fw-bold">Email Verification</h2>
-    {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-        <div class="alert alert-danger">
-            <ul>
-                {% for category, message in messages %}
-                    <li>{{ message }}</li>
-                {% endfor %}
-            </ul>
-        </div>
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
     {% endif %}
 {% endwith %}
+
+<div class="verify-container">
+    <h2 class="text-center fw-bold">Email Verification</h2>
     <p class="text-muted text-center">We've sent a verification code to <strong>{{ email }}</strong>. Please enter it below.</p>
-    <form method="POST" action="/verify">
+    <form method="POST" action="{{ action_url }}">
         <div class="mb-3">
             <label class="form-label">Verification Code</label>
             <input type="text" class="form-control" name="verification_code" required>
