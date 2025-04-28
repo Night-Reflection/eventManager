@@ -195,21 +195,47 @@ def events():
     view = request.args.get('view', 'weekly')
     direction = request.args.get('direction', 'current')
     jump_to_date = request.args.get('jump_to_date')
+    search_event = request.args.get('search_event')
+
+    if 'current_day' in session:
+        try:
+            current_day = datetime.strptime(session['current_day'], '%d.%m.%Y')
+        except ValueError:
+            current_day = today
+    else:
+        current_day = today
+
+    if search_event:
+        events_found = Event.query.filter(
+            Event.user_id == session['user_id'],
+            Event.title.ilike(f"%{search_event}%")
+        ).order_by(Event.date.asc()).all()
+
+        if events_found:
+            today = datetime.today()
+            for event in events_found:
+                event_date = datetime.strptime(event.date, '%Y-%m-%d')
+                if event_date >= today:
+                    jump_to_date = event.date
+                    break
+            else:
+                jump_to_date = events_found[-1].date
+
+            view = 'daily'
+        else:
+            flash('No event found with that title.', 'danger')
+            return redirect(url_for('events'))
 
     if jump_to_date:
         try:
             jump_date = datetime.strptime(jump_to_date, '%Y-%m-%d')
+            current_day = jump_date
         except ValueError:
             jump_date = today
-    else:
-        jump_date = today
+            current_day = today
 
     if view == 'daily':
-        if jump_to_date:
-            current_day = jump_date
-        else:
-            current_day = datetime.strptime(session.get('current_day', today.strftime('%d.%m.%Y')), '%d.%m.%Y')
-
+        if not jump_to_date:
             if direction == 'prev':
                 current_day -= timedelta(days=1)
             elif direction == 'next':
@@ -240,61 +266,63 @@ def events():
             end_of_week=(current_day + timedelta(days=6 - current_day.weekday())).strftime('%d.%m.%Y'),
             preset=current_day.strftime('%Y-%m-%d')
         )
-        
-    if jump_to_date:
-        start_of_week = jump_date - timedelta(days=jump_date.weekday())
-        end_of_week = start_of_week + timedelta(days=6)
-    else:
-        start_of_week = session.get('start_of_week')
-        end_of_week = session.get('end_of_week')
 
-        if not start_of_week or not end_of_week:
-            start_of_week = today - timedelta(days=today.weekday())
+    if view == 'weekly':
+        if jump_to_date:
+            start_of_week = current_day - timedelta(days=current_day.weekday())
             end_of_week = start_of_week + timedelta(days=6)
+        else:
+            start_of_week = session.get('start_of_week')
+            end_of_week = session.get('end_of_week')
 
-        if isinstance(start_of_week, str):
-            start_of_week = datetime.strptime(start_of_week, '%d.%m.%Y')
+            if not start_of_week or not end_of_week:
+                start_of_week = current_day - timedelta(days=current_day.weekday())
+                end_of_week = start_of_week + timedelta(days=6)
 
-        if isinstance(end_of_week, str):
-            end_of_week = datetime.strptime(end_of_week, '%d.%m.%Y')
+            if isinstance(start_of_week, str):
+                start_of_week = datetime.strptime(start_of_week, '%d.%m.%Y')
+            if isinstance(end_of_week, str):
+                end_of_week = datetime.strptime(end_of_week, '%d.%m.%Y')
 
-        if direction == 'prev':
-            start_of_week -= timedelta(weeks=1)
-            end_of_week -= timedelta(weeks=1)
-        elif direction == 'next':
-            start_of_week += timedelta(weeks=1)
-            end_of_week += timedelta(weeks=1)
-        elif direction == 'current':
-            start_of_week = today - timedelta(days=today.weekday())
-            end_of_week = start_of_week + timedelta(days=6)
+            if direction == 'prev':
+                start_of_week -= timedelta(weeks=1)
+                end_of_week -= timedelta(weeks=1)
+                current_day = start_of_week
+            elif direction == 'next':
+                start_of_week += timedelta(weeks=1)
+                end_of_week += timedelta(weeks=1)
+                current_day = start_of_week
+            elif direction == 'current':
+                start_of_week = today - timedelta(days=today.weekday())
+                end_of_week = start_of_week + timedelta(days=6)
+                current_day = today
 
-    session['start_of_week'] = start_of_week.strftime('%d.%m.%Y')
-    session['end_of_week'] = end_of_week.strftime('%d.%m.%Y')
+        session['start_of_week'] = start_of_week.strftime('%d.%m.%Y')
+        session['end_of_week'] = end_of_week.strftime('%d.%m.%Y')
+        session['current_day'] = current_day.strftime('%d.%m.%Y')
 
-    week_days = []
-    for i in range(7):
-        day = start_of_week + timedelta(days=i)
-        day_events = Event.query.filter_by(
-            user_id=session['user_id']
-        ).filter(Event.date == day.strftime('%Y-%m-%d')).all()
+        week_days = []
+        for i in range(7):
+            day = start_of_week + timedelta(days=i)
+            day_events = Event.query.filter_by(
+                user_id=session['user_id']
+            ).filter(Event.date == day.strftime('%Y-%m-%d')).all()
 
-        week_days.append({
-            'name': day.strftime('%A'),
-            'date': day.strftime('%d-%m-%Y'),
-            'events': day_events
-        })
-    if 'current_day' not in session:
-        session['current_day'] = jump_date.strftime('%d.%m.%Y') if jump_to_date else today.strftime('%d.%m.%Y')
+            week_days.append({
+                'name': day.strftime('%A'),
+                'date': day.strftime('%d-%m-%Y'),
+                'events': day_events
+            })
 
-    return render_template(
-        'events.html',
-        week_days=week_days,
-        view=view,
-        current_date=session['current_day'],
-        start_of_week=start_of_week.strftime('%d.%m.%Y'),
-        end_of_week=end_of_week.strftime('%d.%m.%Y'),
-        preset=start_of_week.strftime('%Y-%m-%d')
-    )
+        return render_template(
+            'events.html',
+            week_days=week_days,
+            view=view,
+            current_date=current_day.strftime('%d.%m.%Y'),
+            start_of_week=start_of_week.strftime('%d.%m.%Y'),
+            end_of_week=end_of_week.strftime('%d.%m.%Y'),
+            preset=start_of_week.strftime('%Y-%m-%d')
+        )
 
 @app.route('/event/details/<int:event_id>', methods=['GET'])
 def event_details(event_id):

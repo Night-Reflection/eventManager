@@ -10,25 +10,25 @@ h2 {
 .login-container,
 .register-container,
 .verify-container {
-    max-width: 400px;
-    margin: 50px auto;
-    padding: 20px;
+    max-width: 90%;
+    margin: 5% auto;
+    padding: 2em;
     background: white;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 0.5em;
+    box-shadow: 0 0.25em 0.5em rgba(0, 0, 0, 0.1);
 }
 
 button {
-    font-size: 18px;
-    border-radius: 5px;
+    font-size: 1.125em;
+    border-radius: 0.3125em;
 }
 
 .btn-group {
-    margin: 20px 0;
+    margin: 2em 0;
 }
 
 .navbar {
-    margin-bottom: 20px;
+    margin-bottom: 2em;
 }
 
 .navbar-brand {
@@ -36,15 +36,16 @@ button {
 }
 
 .container {
-    margin-top: 20px;
+    margin-top: 2em;
 }
+
 .hour-slot {
-    border-bottom: 1px solid #ddd;
+    border-bottom: 0.0625em solid #ddd;
 }
 
 .event {
     background-color: #f1f1f1;
-    padding: 5px;
-    border-radius: 5px;
-    font-size: 12px;
+    padding: 0.5em;
+    border-radius: 0.3125em;
+    font-size: 0.75em;
 }
