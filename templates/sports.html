@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="text-center">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
+</div>
+
+<h1 class="text-center mb-4 text-primary">Explore & Follow Sports Teams</h1>
+
+<style>
+    .card { 
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s; 
+        border-radius: 1em; 
+    }
+
+    .card:hover { 
+        transform: scale(1.03); 
+        box-shadow: 0 0.5em 1.25em rgba(0,0,0,0.3); 
+    }
+
+    .card-title { 
+        font-size: 1.25rem; 
+        font-weight: bold; 
+    }
+
+    .follow-btn { 
+        border-radius: 1.5em; 
+        font-weight: bold; 
+        transition: all 0.2s ease-in-out; 
+    }
+
+    .follow-btn:disabled { 
+        background-color: #6c757d !important; 
+        border-color: #6c757d !important; 
+        cursor: not-allowed; 
+    }
+
+    .team-logo { 
+        width: 10em;
+        height: 10em;
+        object-fit: contain;
+        border-radius: 50%;
+        margin-bottom: -2em;
+        margin-top: -2em;
+        max-width: 200%;
+        max-height: 200%;
+    }
+</style>
+
+<form method="GET" class="mb-4 d-flex flex-column align-items-center">
+    <div class="d-flex w-75 mb-2">
+        <input type="text" name="search" class="form-control me-2" placeholder="Search for a team..." value="{{ search_query }}">
+        <button type="submit" class="btn btn-outline-primary">Search</button>
+    </div>
+</form>
+
+{% set follow_limit_reached = (not user.premium) and (user_following|length >= 5) %}
+
+<div class="row">
+    {% for team in followed_teams %}
+        <div class="col-md-4 mb-4">
+            <div class="card bg-dark text-white shadow p-3">
+                <div class="card-body text-center">
+                    {% if team.logo %}
+                    <img src="{{ team.logo }}" class="team-logo">
+                    {% endif %}
+                    <h5 class="card-title">{{ team.name }}</h5>
+                    <p><strong>Sport:</strong> {{ team.sport }}</p>
+                    <p><strong>League:</strong> {{ team.league }}</p>
+                    <form method="POST" action="{{ url_for('unfollow_sports') }}">
+                        <input type="hidden" name="team_id" value="{{ team.id }}">
+                        <button type="submit" class="btn btn-danger w-100 follow-btn mt-2">Unfollow</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<div class="row">
+    {% for team in other_teams %}
+        <div class="col-md-4 mb-4">
+            <div class="card bg-dark text-white shadow p-3">
+                <div class="card-body text-center">
+                    {% if team.logo %}
+                    <img src="{{ team.logo }}" class="team-logo">
+                    {% endif %}
+                    <h5 class="card-title">{{ team.team }}</h5>
+                    <p><strong>Sport:</strong> {{ team.sport }}</p>
+                    <p><strong>League:</strong> {{ team.league }}</p>
+                    {% if team.team not in user_following %}
+                        {% if not follow_limit_reached %}
+                            <form method="POST">
+                                <input type="hidden" name="team_name" value="{{ team.team }}">
+                                <input type="hidden" name="team_sport" value="{{ team.sport }}">
+                                <input type="hidden" name="team_logo" value="{{ team.logo }}">
+                                <input type="hidden" name="team_league" value="{{ team.league }}">
+                                <button type="submit" class="btn btn-primary w-100 follow-btn mt-2">Follow</button>
+                            </form>
+                        {% else %}
+                            <button type="button" class="btn btn-secondary w-100 mt-2" disabled>Follow limit reached</button>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<div class="d-flex justify-content-between mt-4">
+    {% if page > 1 %}
+        <a href="{{ url_for('Sports', search=search_query, page=page - 1) }}" class="btn btn-outline-secondary">← Previous Page</a>
+    {% else %}
+        <div></div>
+    {% endif %}
+
+    {% if other_teams and other_teams|length == per_page %}
+        <a href="{{ url_for('Sports', search=search_query, page=page + 1) }}" class="btn btn-outline-primary">Next Page →</a>
+    {% endif %}
+</div>
+
+{% endblock %}

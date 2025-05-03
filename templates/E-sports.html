@@ -3,7 +3,6 @@
 {% block content %}
 
 <div class="text-center">
-    <h2 class="fw-bold">Settings</h2>
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
         {% for category, message in messages %}
