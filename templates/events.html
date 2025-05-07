@@ -11,18 +11,21 @@
     {% endfor %}
 {% endif %}
 {% endwith %}
+
 <div class="text-center">
     <h2 class="fw-bold">Your Calendar</h2>
-    
     <p class="lead">View and manage your upcoming events</p>
 
-    <form method="GET" action="{{ url_for('events') }}" class="mb-4 d-flex justify-content-center align-items-center gap-2 flex-wrap">
+    <form method="GET" action="{{ url_for('events') }}" class="mb-4 d-flex justify-content-center align-items-center gap-2 flex-wrap position-relative">
         <input type="date" name="jump_to_date" class="form-control w-auto" value="{{ preset }}" required>
         <input type="hidden" name="view" value="{{ view }}">
         <button type="submit" class="btn btn-outline-success">Go to Date</button>
-        <input type="text" name="search_event" class="form-control w-auto" placeholder="Search event title">
-        <button type="submit" class="btn btn-outline-primary">Search</button>
-    </form>    
+
+        <div class="position-relative">
+            <input type="text" id="event-search" class="form-control w-auto" placeholder="Search event title" autocomplete="off">
+            <div id="search-suggestions" class="list-group position-absolute w-100 zindex-dropdown"></div>
+        </div>
+    </form>
 
     <div class="mb-3">
         <a href="{{ url_for('events', direction='prev', view=view) }}" class="btn btn-primary">Previous Week</a>
@@ -52,11 +55,8 @@
                     {% for hour in range(24) %}
                     <div class="time-slot">
                         <div class="time-label">{{ '{:02d}:00'.format(hour) }}</div>
-
                         {% for event in day.events %}
                             {% set event_hour = event.time.split(":")[0]|int %}
-                            {% set event_minute = event.time.split(":")[1]|int %}
-
                             {% if event_hour == hour %}
                             <div class="event" onclick="showEventModal('{{ event.id }}')">
                                 <span>{{ event.title }} ({{ event.time }})</span>
@@ -74,16 +74,12 @@
 
     {% if view == 'daily' %}
     <h3>{{ current_day.name }}<br>{{ current_day.date }}</h3>
-
     <div class="calendar-day">
         {% for hour in range(24) %}
         <div class="time-slot">
             <div class="time-label">{{ '{:02d}:00'.format(hour) }}</div>
-
             {% for event in current_day.events %}
                 {% set event_hour = event.time.split(":")[0]|int %}
-                {% set event_minute = event.time.split(":")[1]|int %}
-
                 {% if event_hour == hour %}
                 <div class="event" onclick="showEventModal('{{ event.id }}')">
                     <span>{{ event.title }} ({{ event.time }})</span>
@@ -98,7 +94,6 @@
     <a href="{{ url_for('Create_Event') }}" class="btn btn-success mt-4">Create New Event</a>
 </div>
 
-<!-- POP-UP HTML -->
 <div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -129,7 +124,6 @@
     width: 100%;
     overflow-x: auto;
 }
-
 .calendar-day {
     border: 1px solid #ccc;
     border-radius: 0.5em;
@@ -142,12 +136,10 @@
     flex-shrink: 0;
     background-color: #fff;
 }
-
 .time-slot {
     border-bottom: 1px solid #ddd;
     padding: 0.5em 0;
 }
-
 .time-label {
     font-weight: bold;
     margin-bottom: 0.3em;
@@ -155,7 +147,6 @@
     padding-left: 0.3em;
     font-size: 0.9rem;
 }
-
 .event {
     background-color: #f1f1f1;
     padding: 0.5em 0.75em;
@@ -167,50 +158,25 @@
     cursor: pointer;
     font-size: 0.95rem;
 }
-
-.btn {
-    margin: 0.5em;
-    padding: 0.6em 1.2em;
-    font-size: 1rem;
+.list-group-item {
+    cursor: pointer;
 }
-
-/* POP-UP */
 .modal-content {
     border-radius: 0.75em;
     padding: 1.25em;
     background-color: #f8f9fa;
 }
-
 .modal-header {
     border-bottom: 1px solid #e9ecef;
 }
-
 .modal-title {
     font-size: 1.5rem;
     color: #343a40;
 }
-
-.btn-close {
-    background-color: #ffffff;
-    border: none;
-    color: #343a40;
-    font-size: 1.2rem;
-}
-
 .modal-body {
     font-size: 1rem;
     color: #495057;
 }
-
-.modal-body p {
-    margin-bottom: 1rem;
-}
-
-.modal-body h6 {
-    font-weight: bold;
-    margin-bottom: 0.6em;
-}
-
 #editEventBtn, #deleteEventBtn {
     display: inline-block;
     width: 100%;
@@ -221,73 +187,71 @@
     padding: 0.75em;
     border-radius: 0.5em;
 }
-
 #editEventBtn {
     background-color: #ffc107;
     color: white;
 }
-
-#editEventBtn:hover {
-    background-color: #e0a800;
-    transition: background-color 0.3s ease;
-}
-
 #deleteEventBtn {
     background-color: #dc3545;
     color: white;
 }
-
-#deleteEventBtn:hover {
-    background-color: #c82333;
-    transition: background-color 0.3s ease;
+#search-suggestions {
+    max-height: 12em;
+    overflow-y: auto;
+    z-index: 1050;
 }
-
 @media (max-width: 768px) {
     .calendar-week {
         grid-template-columns: repeat(1, 1fr);
-        gap: 1rem;
     }
-
     .calendar-day {
         width: 90%;
         margin: 0 auto;
     }
-
-    .modal-dialog {
-        max-width: 95%;
-    }
-
-    .modal-content {
-        padding: 1em;
-    }
-
-    .btn {
-        font-size: 0.95rem;
-        padding: 0.5em 1em;
-    }
 }
-
 </style>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // Function to show the POP-UP
-    function showEventModal(eventId) {
-        fetch(`/event/details/${eventId}`)
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('eventTitle').textContent = data.title;
-                document.getElementById('eventTime').textContent = data.time;
-                document.getElementById('eventDescription').textContent = data.description;
-                document.getElementById('eventLocation').textContent = data.location;
-                document.getElementById('editEventBtn').href = `/edit_event/${eventId}`;
-                document.getElementById('deleteEventBtn').href = `/delete_event/${eventId}`;
-                
-                var myModal = new bootstrap.Modal(document.getElementById('eventModal'));
-                myModal.show();
-            })
-            .catch(error => console.error("Error fetching event data:", error));
-    }
-    </script>
-    
+function showEventModal(eventId) {
+    fetch(`/event/details/${eventId}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('eventTitle').textContent = data.title;
+            document.getElementById('eventTime').textContent = data.time;
+            document.getElementById('eventDescription').textContent = data.description;
+            document.getElementById('eventLocation').textContent = data.location;
+            document.getElementById('editEventBtn').href = `/edit_event/${eventId}`;
+            document.getElementById('deleteEventBtn').href = `/delete_event/${eventId}`;
+            new bootstrap.Modal(document.getElementById('eventModal')).show();
+        })
+        .catch(error => console.error("Error fetching event data:", error));
+}
 
+document.getElementById('event-search').addEventListener('input', function () {
+    const input = this.value;
+    const suggestionsDiv = document.getElementById('search-suggestions');
+    suggestionsDiv.innerHTML = '';
+    if (input.length < 2) return;
+
+    fetch(`/search_events?term=${encodeURIComponent(input)}`)
+        .then(res => res.json())
+        .then(events => {
+            if (events.length === 0) {
+                const none = document.createElement('div');
+                none.className = 'list-group-item text-muted';
+                none.textContent = 'No matches found.';
+                suggestionsDiv.appendChild(none);
+            } else {
+                events.forEach(event => {
+                    const div = document.createElement('a');
+                    div.className = 'list-group-item list-group-item-action';
+                    div.href = `/events?jump_to_date=${event.date}&view=daily`;
+                    div.textContent = `${event.title} - ${event.date} at ${event.time}`;
+                    suggestionsDiv.appendChild(div);
+                });
+            }
+        });
+});
+</script>
 {% endblock %}

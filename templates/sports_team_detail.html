@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-12 text-center mb-4">
+            <a href="{{ url_for('Sports') }}" class="btn btn-primary mb-4">← Back to Teams</a>
+            
+            <div class="team-header">
+                {% if team.strTeamBadge %}
+                    <img src="{{ team.strTeamBadge }}" alt="{{ team.strTeam }}" class="img-fluid mb-3" style="max-height: 200px;">
+                {% elif team.strLogo %}
+                    <img src="{{ team.strLogo }}" alt="{{ team.strTeam }}" class="img-fluid mb-3" style="max-height: 200px;">
+                {% endif %}
+                <h1 class="mb-3">{{ team.strTeam }}</h1>
+                
+                {% if team.strLeague %}
+                    <h4>{{ team.strLeague }}</h4>
+                {% endif %}
+
+                <div class="mt-3 mb-4">
+                    {% if is_following %}
+                    <form method="POST" action="{{ url_for('unfollow_sports') }}" class="d-inline">
+                        <input type="hidden" name="team_id" value="{{ team_in_db.id }}">
+                        <button type="submit" class="btn btn-danger btn-lg px-5">
+                            <i class="fas fa-star me-2"></i> Unfollow Team
+                        </button>
+                    </form>
+                {% else %}
+                    <form method="POST" action="{{ url_for('Sports') }}" class="d-inline">
+                        <input type="hidden" name="team_name" value="{{ team.strTeam }}">
+                        <input type="hidden" name="team_sport" value="{{ team.strSport }}">
+                        <input type="hidden" name="team_logo" value="{{ team.strTeamBadge or team.strLogo }}">
+                        <input type="hidden" name="team_league" value="{{ team.strLeague }}">
+                        <input type="hidden" name="team_id" value="{{ team.idTeam }}">
+                        <button type="submit" class="btn btn-success btn-lg px-5"
+                            {% if follow_limit_reached %} disabled {% endif %}>
+                            {% if follow_limit_reached %} Limit Reached {% else %} Follow Team {% endif %}
+                        </button>
+                    </form>
+                    {% if follow_limit_reached %}
+                        <div class="text-warning mt-1">
+                            <small>You need Premium to follow more than 5 sports teams</small>
+                        </div>
+                    {% endif %}
+                {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Team Information</h3>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <tbody>
+                            {% if team.strSport %}
+                            <tr>
+                                <th>Sport</th>
+                                <td>{{ team.strSport }}</td>
+                            </tr>
+                            {% endif %}
+                            
+                            {% if team.strCountry %}
+                            <tr>
+                                <th>Country</th>
+                                <td>{{ team.strCountry }}</td>
+                            </tr>
+                            {% endif %}
+                            
+                            {% if team.strStadium %}
+                            <tr>
+                                <th>Stadium</th>
+                                <td>{{ team.strStadium }}</td>
+                            </tr>
+                            {% endif %}
+                            
+                            {% if team.intFormedYear %}
+                            <tr>
+                                <th>Founded</th>
+                                <td>{{ team.intFormedYear }}</td>
+                            </tr>
+                            {% endif %}
+                            
+                            {% if manager %}
+                            <tr>
+                                <th>Manager</th>
+                                <td>{{ manager }}</td>
+                            </tr>
+                            {% endif %}
+                            
+                            {% if team_nickname %}
+                            <tr>
+                                <th>Nickname</th>
+                                <td>{{ team_nickname }}</td>
+                            </tr>
+                            {% endif %}
+                            
+                            {% if team_awards %}
+                            <tr>
+                                <th>Awards</th>
+                                <td>{{ team_awards }}</td>
+                            </tr>
+                            {% endif %}
+                            
+                            {% if team_colors %}
+                            <tr>
+                                <th>Team Colors</th>
+                                <td>{{ team_colors }}</td>
+                            </tr>
+                            {% endif %}
+                            
+                            {% if team.strWebsite %}
+                            <tr>
+                                <th>Website</th>
+                                <td>
+                                    <a href="https://{{ team.strWebsite }}" target="_blank">{{ team.strWebsite }}</a>
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            {% if team.strStadiumThumb %}
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">{{ team.strStadium }}</h3>
+                </div>
+                <div class="card-body text-center">
+                    <img src="{{ team.strStadiumThumb }}" alt="{{ team.strStadium }}" class="img-fluid rounded mb-3" style="max-height: 200px;">
+                    {% if team.strStadiumDescription %}
+                        <p class="small">{{ team.strStadiumDescription[:150] }}{% if team.strStadiumDescription|length > 150 %}...{% endif %}</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Social Media</h3>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-around">
+                        {% if team.strFacebook %}
+                            <a href="https://{{ team.strFacebook }}" target="_blank" class="btn btn-outline-primary">
+                                <i class="fab fa-facebook-f me-2"></i> Facebook
+                            </a>
+                        {% endif %}
+                        
+                        {% if team.strTwitter %}
+                            <a href="https://{{ team.strTwitter }}" target="_blank" class="btn btn-outline-info">
+                                <i class="fab fa-twitter me-2"></i> Twitter
+                            </a>
+                        {% endif %}
+                        
+                        {% if team.strInstagram %}
+                            <a href="https://{{ team.strInstagram }}" target="_blank" class="btn btn-outline-danger">
+                                <i class="fab fa-instagram me-2"></i> Instagram
+                            </a>
+                        {% endif %}
+                        
+                        {% if team.strYoutube %}
+                            <a href="https://{{ team.strYoutube }}" target="_blank" class="btn btn-outline-danger">
+                                <i class="fab fa-youtube me-2"></i> YouTube
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">About {{ team.strTeam }}</h3>
+                </div>
+                <div class="card-body">
+                    {% if team.strDescriptionEN %}
+                        <p>{{ team.strDescriptionEN }}</p>
+                    {% else %}
+                        <p class="text-muted">No description available for this team.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

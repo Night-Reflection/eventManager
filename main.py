@@ -139,6 +139,51 @@ def home():
                                         user_id=user.id
                                     )
                                     db.session.add(ev)
+
+            followed_sports = FollowedSportsTeam.query.filter_by(user_id=user.id).all()
+            for followed in followed_sports:
+                sports_team = followed.team
+                matches_resp = requests.get(f'https://www.thesportsdb.com/api/v1/json/{SPORTS_API_KEY}/searchevents.php?e={sports_team.name}')
+                if matches_resp.status_code != 200:
+                    continue
+                try:
+                    matches = matches_resp.json().get('event', [])
+                except Exception:
+                    matches = []
+                if not matches:
+                    continue
+                filtered_matches = [
+                    match for match in matches
+                    if match.get('strHomeTeam') == sports_team.name or match.get('strAwayTeam') == sports_team.name
+                ]
+                for match in filtered_matches:
+                    event_date = match.get('dateEvent')
+                    event_time = match.get('strTime')
+                    if event_date and event_time:
+                        match_time_utc = datetime.strptime(f"{event_date} {event_time}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=ZoneInfo("UTC"))
+                        match_time_local = match_time_utc.astimezone(user_tz)
+                        if match_time_local > datetime.now(tz=user_tz):
+                            title = match.get('strEvent', 'Unknown Match')
+                            location = match.get('strVenue', 'Unknown Venue')
+                            date = match_time_local.strftime('%Y-%m-%d')
+                            time = match_time_local.strftime('%H:%M')
+                            exists = Event.query.filter_by(
+                                user_id=user.id,
+                                title=title,
+                                date=date,
+                                time=time
+                            ).first()
+                            if not exists:
+                                ev = Event(
+                                    title=title,
+                                    date=date,
+                                    time=time,
+                                    description=title,
+                                    location=location,
+                                    user_id=user.id
+                                )
+                                db.session.add(ev)
+
             db.session.commit()
 
         return render_template("home.html", user=user)
@@ -413,6 +458,19 @@ def events():
             preset=start_of_week.strftime('%Y-%m-%d')
         )
 
+@app.route('/search_events')
+def search_events():
+    term = request.args.get('term', '')
+    results = Event.query.filter(
+        Event.user_id == session['user_id'],
+        Event.title.ilike(f'%{term}%')
+    ).order_by(Event.date.asc()).all()
+
+    return jsonify([
+        {'id': e.id, 'title': e.title, 'date': e.date, 'time': e.time}
+        for e in results
+    ])
+
 @app.route('/event/details/<int:event_id>', methods=['GET'])
 def event_details(event_id):
     event = Event.query.get_or_404(event_id)
@@ -590,6 +648,65 @@ def unfollow():
             flash(f'Unfollowed {team.name}', 'info')
     return redirect(url_for('Esports', **request.args))
 
+@app.route('/team/<int:team_id>', methods=['GET', 'POST'])
+def team_detail(team_id):
+    headers = {'Authorization': f'Bearer {PANDASCORE_API_KEY}'}
+    
+    team_resp = requests.get(f'https://api.pandascore.co/teams/{team_id}', headers=headers)
+    if team_resp.status_code != 200:
+        flash('Could not load team data.', 'danger')
+        return redirect(url_for('Esports'))
+    
+    team = team_resp.json()
+
+    thirty_days_ago = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
+    match_resp = requests.get(
+        f'https://api.pandascore.co/teams/{team_id}/matches',
+        headers=headers,
+        params={'sort': '-begin_at', 'per_page': 5, 'filter[begin_at]': f'>{thirty_days_ago}'}
+    )
+    matches = match_resp.json() if match_resp.status_code == 200 else []
+
+    is_following = False
+    follow_limit_reached = False
+    followed_teams_count = 0
+    if 'user_id' in session:
+        user = User.query.get(session['user_id'])
+        followed_teams_count = FollowedTeam.query.filter_by(user_id=user.id).count()
+        follow_limit_reached = not user.premium and followed_teams_count >= 5
+
+        local_team = Team.query.filter_by(external_id=team_id).first()
+        if local_team:
+            is_following = FollowedTeam.query.filter_by(user_id=user.id, team_id=local_team.id).first() is not None
+
+        if request.method == 'POST':
+            if is_following:
+                follow_record = FollowedTeam.query.filter_by(user_id=user.id, team_id=local_team.id).first()
+                db.session.delete(follow_record)
+                db.session.commit()
+                flash(f'You have unfollowed {team["name"]}.', 'success')
+                return redirect(url_for('team_detail', team_id=team_id))
+            elif not follow_limit_reached:
+                if not local_team:
+                    local_team = Team(name=team['name'], external_id=team_id, game=team['current_videogame']['name'])
+                    db.session.add(local_team)
+                    db.session.commit()
+                db.session.add(FollowedTeam(user_id=user.id, team_id=local_team.id))
+                db.session.commit()
+                flash(f'You are now following {team["name"]}.', 'success')
+                return redirect(url_for('team_detail', team_id=team_id))
+            else:
+                flash('Follow limit reached. Upgrade to premium to follow more teams.', 'warning')
+
+    return render_template(
+        'team_detail.html', 
+        team=team, 
+        matches=matches,
+        is_following=is_following,
+        follow_limit_reached=follow_limit_reached,
+        followed_teams_count=followed_teams_count
+    )
+
 API_KEY = "3"
 
 sports_list = [
@@ -635,24 +752,58 @@ sport_leagues = {
 }
 
 def get_teams_by_name(team_name, selected_sports=None):
+    if not team_name:
+        return []
+
     url = f"https://www.thesportsdb.com/api/v1/json/{API_KEY}/searchteams.php?t={team_name}"
-    response = requests.get(url)
     
-    if response.status_code == 200:
+    response = requests.get(url)
+    if response.status_code != 200:
+        return []
+    
+    try:
         teams = response.json().get('teams', [])
-        if teams:
-            filtered_teams = []
-            for team in teams:
-                if 'strSport' in team and (selected_sports is None or team['strSport'] in selected_sports):
-                    filtered_teams.append({
-                        "team": team['strTeam'], 
-                        "logo": team['strLogo'], 
-                        "league": team.get('strLeague', 'Unknown'),
-                        "sport": team.get('strSport', 'Unknown'),
-                        "team_id": team.get('idTeam')
-                    })
-            return filtered_teams
-    return []
+        if not teams:
+            return []
+        
+        filtered_teams = []
+        for team in teams:
+            if 'strSport' in team and (selected_sports is None or team['strSport'] in selected_sports):
+                filtered_teams.append({
+                    "name": team.get('strTeam', 'Unknown'),
+                    "logo": team.get('strTeamBadge') or team.get('strLogo'),
+                    "league": team.get('strLeague', 'Unknown'),
+                    "sport": team.get('strSport', 'Unknown'),
+                    "id": team.get('idTeam')
+                })
+        return filtered_teams
+    except Exception as e:
+        return []
+
+def get_random_teams(sports_list, sport_leagues, num_teams=12, teams_per_league=3):
+    random_teams = []
+    selected_leagues = random.sample([league for leagues in sport_leagues.values() for league in leagues], 4)
+
+    for random_league in selected_leagues:
+        url = f"https://www.thesportsdb.com/api/v1/json/{API_KEY}/search_all_teams.php?l={random_league}"
+        response = requests.get(url)
+
+        if response.status_code == 200:
+            teams = response.json().get('teams', [])
+            for team in teams[:teams_per_league]:
+                random_teams.append({
+                    "name": team['strTeam'],
+                    "logo": team.get('strTeamBadge') or team.get('strLogo'),
+                    "league": team.get('strLeague', 'Unknown'),
+                    "sport": team.get('strSport', 'Unknown'),
+                    "id": team.get('idTeam')
+                })
+                if len(random_teams) >= num_teams:
+                    break
+        if len(random_teams) >= num_teams:
+            break
+
+    return random_teams
 
 @app.route('/Sports', methods=['GET', 'POST'])
 def Sports():
@@ -661,12 +812,11 @@ def Sports():
 
     user = User.query.get(session['user_id'])
     search_query = request.args.get('search', '').strip()
-    page = int(request.args.get('page', 1))
     per_page = 12
 
     followed_links = FollowedSportsTeam.query.filter_by(user_id=user.id).join(SportsTeam).all()
     followed_teams_data = []
-    
+
     for link in followed_links:
         team = link.team
         team_data = {
@@ -676,54 +826,43 @@ def Sports():
             "logo": None,
             "league": "Unknown"
         }
-        
         if team.name:
             url = f"https://www.thesportsdb.com/api/v1/json/{API_KEY}/searchteams.php?t={team.name}"
             response = requests.get(url)
             if response.status_code == 200:
                 results = response.json().get('teams', [])
-                if results:
-                    for result in results:
-                        if result.get('strTeam', '').lower() == team.name.lower():
-                            team_data["logo"] = result.get('strTeamBadge') or result.get('strLogo')
-                            team_data["league"] = result.get('strLeague', 'Unknown')
-                            break
-        
+                for result in results:
+                    if result.get('strTeam', '').lower() == team.name.lower():
+                        team_data["logo"] = result.get('strTeamBadge') or result.get('strLogo')
+                        team_data["league"] = result.get('strLeague', 'Unknown')
+                        break
         followed_teams_data.append(team_data)
-    
+
     followed_team_names = [t["name"] for t in followed_teams_data]
 
-    other_teams_data = []
     if search_query:
         other_teams_data = get_teams_by_name(search_query)
     else:
-        other_teams_data = []
+        other_teams_data = get_random_teams(sports_list, sport_leagues, num_teams=per_page)
 
-    other_teams_data = [team for team in other_teams_data if team['team'] not in followed_team_names]
+    other_teams_data = [team for team in other_teams_data if team.get('name') and team['name'] not in followed_team_names]
 
     if request.method == 'POST':
         team_name = request.form.get('team_name')
         team_sport = request.form.get('team_sport')
         team_logo = request.form.get('team_logo')
         team_league = request.form.get('team_league')
-        
+        team_id = request.form.get('team_id')
+
         if team_name:
             try:
                 team = SportsTeam.query.filter_by(name=team_name).first()
-                
                 if not team:
-                    team = SportsTeam(
-                        name=team_name,
-                        sport=team_sport
-                    )
+                    team = SportsTeam(name=team_name, sport=team_sport)
                     db.session.add(team)
                     db.session.commit()
-                
-                existing_follow = FollowedSportsTeam.query.filter_by(
-                    user_id=user.id, 
-                    team_id=team.id
-                ).first()
-                
+
+                existing_follow = FollowedSportsTeam.query.filter_by(user_id=user.id, team_id=team.id).first()
                 if not existing_follow:
                     if not user.premium and len(followed_teams_data) >= 5:
                         flash('You can only follow up to 5 teams as a non-premium user.', 'warning')
@@ -731,9 +870,9 @@ def Sports():
                         db.session.add(FollowedSportsTeam(user_id=user.id, team_id=team.id))
                         db.session.commit()
                         flash(f'You are now following {team.name}', 'success')
+                        return redirect(url_for('Sports'))
                 else:
                     flash('You are already following this team.', 'warning')
-
             except Exception as e:
                 flash(f'Error following team: {str(e)}', 'danger')
                 db.session.rollback()
@@ -742,11 +881,11 @@ def Sports():
         'sports.html',
         user=user,
         followed_teams=followed_teams_data,
-        other_teams=other_teams_data[(page - 1) * per_page: page * per_page],
-        page=page,
-        user_following=followed_team_names,
+        other_teams=other_teams_data,
         search_query=search_query,
-        sports_list=sports_list
+        sports_list=sports_list,
+        per_page=per_page,
+        user_following=followed_team_names
     )
 
 @app.route('/unfollow_sports', methods=['POST'])
@@ -761,13 +900,81 @@ def unfollow_sports():
     
     if team:
         follow = FollowedSportsTeam.query.filter_by(user_id=user.id, team_id=team.id).first()
-        
         if follow:
             db.session.delete(follow)
             db.session.commit()
             flash(f'You have unfollowed {team.name}', 'info')
     
     return redirect(url_for('Sports', **request.args))
+
+@app.route('/sports_team/<team_id>')
+def sports_team_detail(team_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
+    user = User.query.get(session['user_id'])
+
+    local_team = None
+    external_id = None
+    team_data = None
+
+    try:
+        local_id = int(team_id)
+        local_team = SportsTeam.query.get(local_id)
+    except ValueError:
+        external_id = team_id
+
+    team_name = local_team.name if local_team else request.args.get('team_name')
+    
+    if not team_name and external_id:
+        ext_team_url = f"https://www.thesportsdb.com/api/v1/json/{API_KEY}/lookupteam.php?id={external_id}"
+        ext_team_resp = requests.get(ext_team_url)
+        if ext_team_resp.status_code == 200 and ext_team_resp.json().get('teams'):
+            team_data = ext_team_resp.json()['teams'][0]
+            team_name = team_data['strTeam']
+
+    if not team_data and team_name:
+        team_url = f"https://www.thesportsdb.com/api/v1/json/{API_KEY}/searchteams.php?t={team_name}"
+        team_resp = requests.get(team_url)
+        if team_resp.status_code == 200 and team_resp.json().get('teams'):
+            teams = team_resp.json()['teams']
+            for t in teams:
+                if t['strTeam'].lower() == team_name.lower():
+                    team_data = t
+                    break
+            if not team_data:
+                team_data = teams[0]
+
+    if not team_data:
+        flash('Team not found', 'danger')
+        return redirect(url_for('Sports'))
+
+    manager = team_data.get('strManager')
+    team_nickname = team_data.get('strAlternate')
+    team_awards = team_data.get('strAwards')
+    team_colors = team_data.get('strTeamColors')
+
+    is_following = False
+    team_in_db = SportsTeam.query.filter_by(name=team_data['strTeam']).first()
+    if team_in_db:
+        is_following = FollowedSportsTeam.query.filter_by(user_id=user.id, team_id=team_in_db.id).first() is not None
+
+    followed_sports_teams_count = FollowedSportsTeam.query.filter_by(user_id=user.id).count()
+    follow_limit_reached = not user.premium and followed_sports_teams_count >= 5
+
+    return render_template(
+        'sports_team_detail.html', 
+        team=team_data,
+        manager=manager,
+        team_nickname=team_nickname,
+        team_awards=team_awards,
+        team_colors=team_colors,
+        is_following=is_following,
+        team_in_db=team_in_db,
+        user=user,
+        followed_teams_count=followed_sports_teams_count,
+        follow_limit_reached=follow_limit_reached
+    )
 
 @app.route('/settings', methods=['GET', 'POST'])
 def settings():

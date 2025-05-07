@@ -18,12 +18,43 @@
 <h1 class="text-center mb-4 text-primary">Explore & Follow Esports Teams</h1>
 
 <style>
-    .card { transition: transform 0.2s ease-in-out, box-shadow 0.2s; border-radius: 1em; }
-    .card:hover { transform: scale(1.03); box-shadow: 0 0.5em 1.25em rgba(0,0,0,0.3); }
-    .card-title { font-size: 1.25rem; font-weight: bold; }
-    .follow-btn { border-radius: 1.5em; font-weight: bold; transition: all 0.2s ease-in-out; }
-    .follow-btn:disabled { background-color: #6c757d !important; border-color: #6c757d !important; cursor: not-allowed; }
-    .team-logo { width: 3.75em; height: 3.75em; object-fit: contain; border-radius: 50%; margin-bottom: 0.625em; }
+    .card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s;
+        border-radius: 1em;
+    }
+    .card:hover {
+        transform: scale(1.03);
+        box-shadow: 0 0.5em 1.25em rgba(0,0,0,0.3);
+    }
+    .card-title {
+        font-size: 1.25rem;
+        font-weight: bold;
+        cursor: pointer;
+        text-decoration: none; /* Remove the underline */
+    }
+    .follow-btn {
+        border-radius: 1.5em;
+        font-weight: bold;
+        transition: all 0.2s ease-in-out;
+    }
+    .follow-btn:disabled {
+        background-color: #6c757d !important;
+        border-color: #6c757d !important;
+        cursor: not-allowed;
+    }
+    .team-logo {
+        width: 3.75em;
+        height: 3.75em;
+        object-fit: contain;
+        border-radius: 50%;
+        margin-bottom: 0.625em;
+        cursor: pointer;
+    }
+    .team-name {
+        display: inline-block;
+        margin-top: 0.625em;
+        font-size: 1.25rem;
+    }
 </style>
 
 <form method="GET" class="mb-4 d-flex flex-column align-items-center">
@@ -50,55 +81,52 @@
 
 <div class="row">
     {% if page == 1 and (followed_teams or other_teams) %}
-  
-      {% for team in followed_teams %}
+        {% for team in followed_teams %}
         <div class="col-md-4 mb-4">
-          <div class="card bg-dark text-white shadow p-3">
-            <div class="card-body text-center">
-              {% if team.image_url %}
-              <img src="{{ team.image_url }}" class="team-logo">
-              {% endif %}
-              <h5 class="card-title">{{ team.name }}</h5>
-              <p class="card-text"><strong>Game:</strong> 
-                 {{ team.current_videogame.name if team.current_videogame else 'Not listed' }}
-              </p>
-              <form method="POST" action="{{ url_for('unfollow') }}?search={{ search_query }}&page={{ page }}{% for g in selected_games %}&game_ids={{ g }}{% endfor %}">
-                <input type="hidden" name="team_id" value="{{ team.id }}">
-                <button type="submit" class="btn btn-danger w-100 follow-btn mt-2">Unfollow</button>
-              </form>
+            <div class="card bg-dark text-white shadow p-3">
+                <div class="card-body text-center">
+                    <a href="{{ url_for('team_detail', team_id=team.id) }}">
+                      {% if team.image_url %}
+                        <img src="{{ team.image_url }}" class="team-logo mb-2" alt="{{ team.name }}"> <br>
+                      {% endif %}
+                        <h5 class="card-title team-name">{{ team.name }}</h5>
+                    </a>
+                    <p class="card-text"><strong>Game:</strong> {{ team.current_videogame.name if team.current_videogame else 'Not listed' }}</p>
+                    <form method="POST" action="{{ url_for('unfollow') }}?search={{ search_query }}&page={{ page }}{% for g in selected_games %}&game_ids={{ g }}{% endfor %}">
+                        <input type="hidden" name="team_id" value="{{ team.id }}">
+                        <button type="submit" class="btn btn-danger w-100 follow-btn mt-2">Unfollow</button>
+                    </form>
+                </div>
             </div>
-          </div>
         </div>
-      {% endfor %}
-
-      <hr class="my-4">
-
+        {% endfor %}
+        <hr class="my-4">
     {% endif %}
 
     {% for team in other_teams %}
-        <div class="col-md-4 mb-4">
-          <div class="card bg-dark text-white shadow p-3">
+    <div class="col-md-4 mb-4">
+        <div class="card bg-dark text-white shadow p-3">
             <div class="card-body text-center">
-              {% if team.image_url %}
-              <img src="{{ team.image_url }}" class="team-logo">
-              {% endif %}
-              <h5 class="card-title">{{ team.name }}</h5>
-              <p class="card-text"><strong>Game:</strong> 
-                 {{ team.current_videogame.name if team.current_videogame else 'Not listed' }}
-              </p>
-              <form method="POST">
-                <input type="hidden" name="team_id" value="{{ team.id }}">
-                <button type="submit" class="btn btn-primary w-100 follow-btn mt-2"
+                <a href="{{ url_for('team_detail', team_id=team.id) }}">
+                  {% if team.image_url %}
+                    <img src="{{ team.image_url }}" class="team-logo mb-2" alt="{{ team.name }}"> <br>
+                  {% endif %}
+                    <h5 class="card-title team-name">{{ team.name }}</h5>
+              
+                </a>
+                <p class="card-text"><strong>Game:</strong> {{ team.current_videogame.name if team.current_videogame else 'Not listed' }}</p>
+                <form method="POST">
+                    <input type="hidden" name="team_id" value="{{ team.id }}">
+                    <button type="submit" class="btn btn-primary w-100 follow-btn mt-2"
                         {% if follow_limit_reached %}disabled{% endif %}>
-                  {% if follow_limit_reached %}Limit Reached{% else %}+ Follow{% endif %}
-                </button>
-              </form>
+                        {% if follow_limit_reached %}Limit Reached{% else %}+ Follow{% endif %}
+                    </button>
+                </form>
             </div>
-          </div>
         </div>
+    </div>
     {% endfor %}
-  
-</div>  
+</div>
 
 <div class="d-flex justify-content-between mt-4">
     {% if page > 1 %}

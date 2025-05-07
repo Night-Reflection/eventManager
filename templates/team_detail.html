@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-primary mb-3">{{ team.name }}</h2>
+    
+    {% if team.image_url %}
+        <img src="{{ team.image_url }}" alt="{{ team.name }}" class="img-fluid rounded mb-4" style="max-width: 150px;">
+    {% endif %}
+    
+    <p><strong>Game:</strong> {{ team.current_videogame.name if team.current_videogame else 'N/A' }}</p>
+    
+    {% if team.country %}
+        <p><strong>Country:</strong> {{ team.country }}</p>
+    {% endif %}
+    
+    {% if team.location %}
+        <p><strong>Location:</strong> {{ team.location }}</p>
+    {% endif %}
+    
+    {% if team.founded %}
+        <p><strong>Founded:</strong> {{ team.founded }}</p>
+    {% endif %}
+    
+    {% if team.description %}
+        <div class="mt-4">
+            <h5><strong>Description:</strong></h5>
+            <p>{{ team.description }}</p>
+        </div>
+    {% endif %}
+    
+    {% if team.players %}
+        <h4 class="mt-4">Roster</h4>
+        <div class="row">
+            {% for player in team.players %}
+                <div class="col-md-3 col-sm-4 col-6 mb-3">
+                    <div class="card text-center shadow-sm h-100">
+                        {% if player.image_url %}
+                            <img src="{{ player.image_url }}" alt="{{ player.name }}" class="card-img-top rounded-circle mx-auto mt-3" style="width: 80px; height: 80px; object-fit: cover;">
+                        {% endif %}
+                        <div class="card-body p-2">
+                            <h6 class="card-title mb-1">{{ player.name }}</h6>
+                            {% if player.role %}
+                                <p class="text-muted small">{{ player.role }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-muted"><em>No roster available.</em></p>
+    {% endif %}
+    
+    {% if matches %}
+        <h4 class="mt-4">Recent Matches</h4>
+        <ul class="list-group">
+            {% for match in matches %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>{{ match.begin_at[:10] if match.begin_at else 'Date Unknown' }}</strong> — 
+                        {% if match.opponents and match.opponents|length >= 2 %}
+                            {{ match.opponents[0].opponent.name }} vs {{ match.opponents[1].opponent.name }}
+                        {% else %}
+                            Match data unavailable
+                        {% endif %}
+                    </div>
+                    <span class="{% if match.winner and match.winner.id == team.id %}text-success{% else %}text-danger{% endif %} fw-bold">
+                        {{ 'Won' if match.winner and match.winner.id == team.id else 'Lost' }}
+                    </span>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-muted"><em>No recent matches available.</em></p>
+    {% endif %}
+
+    {% if 'user_id' in session %}
+        <form method="POST">
+            <button type="submit" class="btn {% if is_following %}btn-danger{% else %}btn-primary{% endif %} mt-4 follow-btn"
+                {% if not is_following and follow_limit_reached %}disabled{% endif %}>
+                {% if is_following %}
+                    Unfollow
+                {% elif follow_limit_reached %}
+                    Limit Reached
+                {% else %}
+                    + Follow
+                {% endif %}
+            </button>
+        </form>
+    {% endif %}
+</div>
+{% endblock %}

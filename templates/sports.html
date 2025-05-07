@@ -17,7 +17,15 @@
 
 <h1 class="text-center mb-4 text-primary">Explore & Follow Sports Teams</h1>
 
+<div class="text-center mb-4">
+    <p><strong>Refresh the page to search for new random teams or search for a specific one!</strong></p>
+</div>
+
 <style>
+    a {
+        text-decoration: none;
+    }
+    
     .card { 
         transition: transform 0.2s ease-in-out, box-shadow 0.2s; 
         border-radius: 1em; 
@@ -64,17 +72,17 @@
     </div>
 </form>
 
-{% set follow_limit_reached = (not user.premium) and (user_following|length >= 5) %}
-
 <div class="row">
     {% for team in followed_teams %}
         <div class="col-md-4 mb-4">
             <div class="card bg-dark text-white shadow p-3">
                 <div class="card-body text-center">
-                    {% if team.logo %}
-                    <img src="{{ team.logo }}" class="team-logo">
-                    {% endif %}
-                    <h5 class="card-title">{{ team.name }}</h5>
+                    <a href="{{ url_for('sports_team_detail', team_id=team.id, team_name=team.name) }}">
+                        {% if team.logo %}
+                        <img src="{{ team.logo }}" class="team-logo">
+                        {% endif %}
+                        <h5 class="card-title">{{ team.name }}</h5>
+                    </a>
                     <p><strong>Sport:</strong> {{ team.sport }}</p>
                     <p><strong>League:</strong> {{ team.league }}</p>
                     <form method="POST" action="{{ url_for('unfollow_sports') }}">
@@ -88,45 +96,34 @@
 </div>
 
 <div class="row">
+    {% set follow_limit_reached = (not user.premium and followed_teams|length >= 5) %}
     {% for team in other_teams %}
-        <div class="col-md-4 mb-4">
-            <div class="card bg-dark text-white shadow p-3">
-                <div class="card-body text-center">
+    <div class="col-md-4 mb-4">
+        <div class="card bg-dark text-white shadow p-3">
+            <div class="card-body text-center">
+                <a href="{{ url_for('sports_team_detail', team_id=team.id, team_name=team.name) }}">
                     {% if team.logo %}
                     <img src="{{ team.logo }}" class="team-logo">
                     {% endif %}
-                    <h5 class="card-title">{{ team.team }}</h5>
-                    <p><strong>Sport:</strong> {{ team.sport }}</p>
-                    <p><strong>League:</strong> {{ team.league }}</p>
-                    {% if team.team not in user_following %}
-                        {% if not follow_limit_reached %}
-                            <form method="POST">
-                                <input type="hidden" name="team_name" value="{{ team.team }}">
-                                <input type="hidden" name="team_sport" value="{{ team.sport }}">
-                                <input type="hidden" name="team_logo" value="{{ team.logo }}">
-                                <input type="hidden" name="team_league" value="{{ team.league }}">
-                                <button type="submit" class="btn btn-primary w-100 follow-btn mt-2">Follow</button>
-                            </form>
-                        {% else %}
-                            <button type="button" class="btn btn-secondary w-100 mt-2" disabled>Follow limit reached</button>
-                        {% endif %}
-                    {% endif %}
-                </div>
+                    <h5 class="card-title">{{ team.name }}</h5>
+                </a>
+                <p><strong>Sport:</strong> {{ team.sport }}</p>
+                <p><strong>League:</strong> {{ team.league }}</p>
+                <form method="POST">
+                    <input type="hidden" name="team_name" value="{{ team.name }}">
+                    <input type="hidden" name="team_sport" value="{{ team.sport }}">
+                    <input type="hidden" name="team_logo" value="{{ team.logo }}">
+                    <input type="hidden" name="team_league" value="{{ team.league }}">
+                    <input type="hidden" name="team_id" value="{{ team.id }}">
+                    <button type="submit" class="btn btn-primary w-100 follow-btn mt-2"
+                        {% if follow_limit_reached %} disabled {% endif %}>
+                        {% if follow_limit_reached %} Limit Reached {% else %} Follow {% endif %}
+                    </button>
+                </form>
             </div>
         </div>
-    {% endfor %}
-</div>
-
-<div class="d-flex justify-content-between mt-4">
-    {% if page > 1 %}
-        <a href="{{ url_for('Sports', search=search_query, page=page - 1) }}" class="btn btn-outline-secondary">← Previous Page</a>
-    {% else %}
-        <div></div>
-    {% endif %}
-
-    {% if other_teams and other_teams|length == per_page %}
-        <a href="{{ url_for('Sports', search=search_query, page=page + 1) }}" class="btn btn-outline-primary">Next Page →</a>
-    {% endif %}
+    </div>
+{% endfor %}
 </div>
 
 {% endblock %}

@@ -49,3 +49,38 @@ button {
     border-radius: 0.3125em;
     font-size: 0.75em;
 }
+.btn-facebook {
+    background-color: #3b5998;
+    color: white;
+}
+.btn-facebook:hover {
+    background-color: #2d4373;
+    color: white;
+}
+
+.btn-twitter {
+    background-color: #1da1f2;
+    color: white;
+}
+.btn-twitter:hover {
+    background-color: #0d8ddb;
+    color: white;
+}
+
+.btn-instagram {
+    background-color: #e1306c;
+    color: white;
+}
+.btn-instagram:hover {
+    background-color: #c72e65;
+    color: white;
+}
+
+.btn-youtube {
+    background-color: #ff0000;
+    color: white;
+}
+.btn-youtube:hover {
+    background-color: #cc0000;
+    color: white;
+}
