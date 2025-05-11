@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from datetime import datetime, timedelta
 import requests
 from zoneinfo import ZoneInfo
+from apscheduler.schedulers.background import BackgroundScheduler
 
 load_dotenv()
 
@@ -18,9 +19,41 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 
+def update_elo_job():
+    with app.app_context():
+        goals = Goal.query.all()
+        headers = {"Authorization": f"Bearer {FACEIT_API_KEY}"}
+
+        for goal in goals:
+            try:
+                if goal.platform == 'faceit':
+                    res = requests.get(f"{FACEIT_API_URL}/players?nickname={goal.nickname}", headers=headers)
+                    if res.status_code == 200:
+                        data = res.json()
+                        new_elo = data.get('games', {}).get(goal.game, {}).get('faceit_elo')
+
+                        if new_elo and new_elo != goal.current_elo:
+                            print(f"[{datetime.now()}] Updating {goal.nickname} ({goal.game}) from {goal.current_elo} ➝ {new_elo}")
+                            goal.current_elo = new_elo
+                            db.session.commit()
+                elif goal.platform == 'youtube':
+                    current_subs = get_youtube_subscribers(goal.nickname)
+                    if current_subs is not None and current_subs != goal.current_elo:
+                        print(f"[{datetime.now()}] Updating YouTube channel {goal.nickname} from {goal.current_elo} ➝ {current_subs}")
+                        goal.current_elo = current_subs
+                        db.session.commit()
+            except Exception as e:
+                print(f"[ERROR] Failed to update {goal.nickname}: {e}")
+
+scheduler = BackgroundScheduler()
+scheduler.add_job(update_elo_job, trigger='interval', minutes=10)
+scheduler.start()
+
 mailjet = Client(auth=(os.getenv('MAILJET_API_KEY'), os.getenv('MAILJET_API_SECRET')), version='v3.1')
 PANDASCORE_API_KEY = os.getenv("E_SPORTS_API_KEY")
 SPORTS_API_KEY = os.getenv("SPORTS_API_KEY")
+FACEIT_API_KEY = os.getenv("FACEIT_API")
+FACEIT_API_URL = "https://open.faceit.com/data/v4"
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -68,6 +101,26 @@ class FollowedSportsTeam(db.Model):
 
     user = db.relationship('User', backref=db.backref('followed_sports_teams', lazy=True))
     team = db.relationship('SportsTeam', backref=db.backref('followers', lazy=True))
+
+class Goal(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nickname = db.Column(db.String(80))
+    game = db.Column(db.String(50), nullable=True)
+    game_name = db.Column(db.String(50), nullable=True)
+    current_elo = db.Column(db.Integer)
+    goal_elo = db.Column(db.Integer)
+    platform = db.Column(db.String(20))
+    custom_name = db.Column(db.String(100), nullable=True)
+    last_updated = db.Column(db.DateTime, default=datetime.now)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    user = db.relationship('User', backref=db.backref('goals', lazy=True))
+
+    def progress(self):
+        if self.goal_elo == 0:
+            return 0
+        return min(100, int((self.current_elo / self.goal_elo) * 100))
+
 
 def create_tables():
     with app.app_context():
@@ -1036,6 +1089,208 @@ def verify_email():
         action_url=url_for('verify_email')
     )
 
+FACEIT_GAMES = {
+    "cs2": "Counter-Strike 2",
+    "csgo": "Counter-Strike: Global Offensive",
+    "valorant": "Valorant",
+    "dota2": "Dota 2",
+    "rocket_league": "Rocket League",
+    "rainbow6": "Rainbow Six Siege",
+    "apex": "Apex Legends",
+    "r6": "Rainbow Six Siege",
+    "leagueoflegends": "League of Legends",
+    "fortnite": "Fortnite",
+    "pubg": "PUBG: Battlegrounds",
+    "smite": "Smite",
+    "overwatch": "Overwatch",
+    "teamfortress2": "Team Fortress 2",
+    "battalion1944": "Battalion 1944",
+    "h1z1": "H1Z1",
+    "paladins": "Paladins",
+    "tft": "Teamfight Tactics",
+    "crossfire": "Crossfire",
+    "warface": "Warface",
+    "worldofwarships": "World of Warships",
+    "warframe": "Warframe",
+    "blackdesert": "Black Desert Online",
+    "fallguys": "Fall Guys",
+    "worldofwarcraft": "World of Warcraft",
+    "hearthstone": "Hearthstone",
+    "fifa": "FIFA",
+    "nba2k": "NBA 2K",
+    "starcraft": "StarCraft II",
+    "heroesofthestorm": "Heroes of the Storm",
+    "gwent": "Gwent",
+    "hearthstone": "Hearthstone",
+    "magic": "Magic: The Gathering Arena"
+}
+
+def get_youtube_subscribers(channel_identifier):
+    api_key = os.getenv("YOUTUBE_API")
+    channel_id = None
+    
+    if not api_key:
+        print("YouTube API key not found")
+        return None
+        
+    if channel_identifier.startswith('@'):
+        url = f"https://www.googleapis.com/youtube/v3/channels?part=snippet&forHandle={channel_identifier[1:]}&key={api_key}"
+        res = requests.get(url)
+        data = res.json()
+        
+        if res.status_code == 200 and 'items' in data and data["items"]:
+            channel_id = data["items"][0]["id"]
+        else:
+            url = f"https://www.googleapis.com/youtube/v3/channels?part=snippet&forUsername={channel_identifier[1:]}&key={api_key}"
+            res = requests.get(url)
+            data = res.json()
+            
+            if res.status_code == 200 and 'items' in data and data["items"]:
+                channel_id = data["items"][0]["id"]
+            else:
+                print(f"Could not find channel for handle/username: {channel_identifier}")
+                return None
+    else:
+        channel_id = channel_identifier
+
+    url = f"https://www.googleapis.com/youtube/v3/channels?part=statistics&id={channel_id}&key={api_key}"
+    res = requests.get(url)
+    
+    if res.status_code != 200:
+        print(f"YouTube API error: {res.status_code}")
+        return None
+        
+    data = res.json()
+    
+    if 'items' in data and data["items"]:
+        subscriber_count = data["items"][0]["statistics"]["subscriberCount"]
+        print(f"Raw subscriber count from API: {subscriber_count}")
+        return int(subscriber_count)
+    else:
+        print(f"No statistics found for channel: {channel_id}")
+        return None
+
+@app.route('/goals', methods=['GET', 'POST'])
+def goals():
+    error = None
+    user = User.query.get(session['user_id']) if 'user_id' in session else None
+
+    if request.method == 'POST':
+        if not user:
+            flash('Please log in to manage your goals.', 'danger')
+            return redirect(url_for('login'))
+
+        user_goals_count = Goal.query.filter_by(user_id=user.id).count()
+        if not user.premium and user_goals_count >= 5:
+            flash('You can only have up to 5 goals as a non-premium user. Upgrade to premium to add more goals.', 'warning')
+            return redirect(url_for('goals'))
+
+        platform = request.form['platform']
+
+        if platform == 'faceit':
+            nickname = request.form['nickname']
+            game = request.form['game']
+            goal_elo = int(request.form['goal_elo'])
+
+            headers = {"Authorization": f"Bearer {FACEIT_API_KEY}"}
+            player_url = f"{FACEIT_API_URL}/players?nickname={nickname}"
+            res = requests.get(player_url, headers=headers)
+
+            if res.status_code == 200:
+                data = res.json()
+                player_games = data.get('games', {})
+                current_elo = player_games.get(game, {}).get('faceit_elo')
+
+                if current_elo is not None:
+                    goal = Goal(
+                        nickname=nickname,
+                        game=game,
+                        game_name=FACEIT_GAMES.get(game, game),
+                        current_elo=current_elo,
+                        goal_elo=goal_elo,
+                        platform='faceit',
+                        last_updated=datetime.now(),
+                        user_id=user.id
+                    )
+                    db.session.add(goal)
+                    db.session.commit()
+                    flash('FACEIT Goal added!', 'success')
+                    return redirect(url_for('goals'))
+                else:
+                    error = f"No ELO data found for {game}."
+            else:
+                error = "FACEIT player not found."
+
+        elif platform == 'youtube':
+            channel_id = request.form['channel_id']
+            goal_subs = int(request.form['goal_subs'])
+            current_subs = get_youtube_subscribers(channel_id)
+
+            if current_subs is not None:
+                goal = Goal(
+                    nickname=channel_id,
+                    current_elo=current_subs,
+                    goal_elo=goal_subs,
+                    game_name="YouTube Subscribers",
+                    platform='youtube',
+                    last_updated=datetime.now(),
+                    user_id=user.id
+                )
+                db.session.add(goal)
+                db.session.commit()
+                flash("YouTube goal added!", "success")
+                return redirect(url_for('goals'))
+            else:
+                error = "Failed to retrieve YouTube data."
+
+        elif platform == 'custom':
+            custom_name = request.form['custom_name']
+            current_value = int(request.form['current_value'])
+            goal_value = int(request.form['goal_value'])
+
+            goal = Goal(
+                nickname="Custom",
+                custom_name=custom_name,
+                current_elo=current_value,
+                goal_elo=goal_value,
+                game_name=custom_name,
+                platform='custom',
+                last_updated=datetime.now(),
+                user_id=user.id
+            )
+            db.session.add(goal)
+            db.session.commit()
+            flash("Custom goal added!", "success")
+            return redirect(url_for('goals'))
+
+        if error:
+            flash(error, 'danger')
+
+    goals = Goal.query.filter_by(user_id=user.id).all() if user else []
+    return render_template("goals.html", goals=goals, faceit_games=FACEIT_GAMES)
+
+@app.route('/goals/update/<int:goal_id>', methods=['POST'])
+def update_custom_goal(goal_id):
+    goal = Goal.query.get_or_404(goal_id)
+    
+    if goal.platform == 'custom':
+        try:
+            new_value = int(request.form['current_value'])
+            goal.current_elo = new_value
+            goal.last_updated = datetime.now()
+            db.session.commit()
+            flash("Goal progress updated!", "success")
+        except ValueError:
+            flash("Invalid value entered.", "danger")
+            
+    return redirect(url_for('goals'))
+
+@app.route('/goals/delete/<int:goal_id>', methods=['POST'])
+def delete_goal(goal_id):
+    goal = Goal.query.get_or_404(goal_id)
+    db.session.delete(goal)
+    db.session.commit()
+    return redirect(url_for('goals'))
 
 if __name__ == "__main__":
     app.run(debug=True)

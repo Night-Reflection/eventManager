@@ -4,3 +4,4 @@ flask-bcrypt
 flask-sqlalchemy 
 python-dotenv
 mailjet-rest
+APScheduler

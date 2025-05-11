@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="mb-4">🎯 My Goals</h1>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<button class="btn btn-success mb-4" type="button" data-bs-toggle="collapse" data-bs-target="#addGoalForm" aria-expanded="false" aria-controls="addGoalForm">
+    <i class="fas fa-plus"></i> Add New Goal
+</button>
+
+<div class="collapse" id="addGoalForm">
+    <div class="card card-body mb-4">
+        <form method="POST" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Platform</label>
+                <select name="platform" class="form-select" id="platformSelect" onchange="toggleFields()" required>
+                    <option value="faceit">FACEIT</option>
+                    <option value="youtube">YouTube</option>
+                    <option value="custom">Custom Goal</option>
+                </select>
+            </div>
+
+            <div class="col-md-8 row g-3" id="faceitFields">
+                <div class="col-md-4">
+                    <label class="form-label">FACEIT Nickname</label>
+                    <input type="text" name="nickname" class="form-control" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Game</label>
+                    <select name="game" class="form-select" required>
+                        {% for key, name in faceit_games.items() %}
+                            <option value="{{ key }}">{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Goal ELO</label>
+                    <input type="number" name="goal_elo" class="form-control" required>
+                </div>
+            </div>
+
+            <div class="col-md-8 row g-3" id="youtubeFields" style="display: none;">
+                <div class="col-md-6">
+                    <label class="form-label">YouTube Handle or Channel ID</label>
+                    <input type="text" name="channel_id" class="form-control" placeholder="@YourHandle or Channel ID" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Goal Subscribers</label>
+                    <input type="number" name="goal_subs" class="form-control" placeholder="e.g., 1000" required>
+                </div>
+            </div>
+            
+            <div class="col-md-8 row g-3" id="customFields" style="display: none;">
+                <div class="col-md-4">
+                    <label class="form-label">Goal Name</label>
+                    <input type="text" name="custom_name" class="form-control" placeholder="e.g., Instagram Followers" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Current Value</label>
+                    <input type="number" name="current_value" class="form-control" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Goal Value</label>
+                    <input type="number" name="goal_value" class="form-control" required>
+                </div>
+            </div>
+
+            <div class="col-12 text-end">
+                <button type="submit" class="btn btn-primary mt-2">Add Goal</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row row-cols-1 row-cols-md-2 g-4">
+    {% for goal in goals %}
+        <div class="col">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        {% if goal.platform == 'faceit' %}
+                            <i class="fas fa-gamepad me-2 text-primary"></i>FACEIT – {{ goal.game_name }} ({{ goal.nickname }})
+                        {% elif goal.platform == 'youtube' %}
+                            <i class="fab fa-youtube me-2 text-danger"></i>YouTube – {{ goal.nickname }}
+                        {% elif goal.platform == 'custom' %}
+                            <i class="fas fa-bullseye me-2 text-success"></i>{{ goal.custom_name }}
+                        {% endif %}
+                    </h5>
+
+                    {% if goal.platform == 'faceit' %}
+                        <p>Current ELO: <strong>{{ goal.current_elo }}</strong></p>
+                        <p>Goal ELO: <strong>{{ goal.goal_elo }}</strong></p>
+                    {% elif goal.platform == 'youtube' %}
+                        {% if goal.current_elo >= 10000 %}
+                            <p>Current Subs: <strong>~{{ "{:,.0f}".format(goal.current_elo).replace(',', '.') }}</strong> <small class="text-muted">(YouTube provides approximate counts)</small></p>
+                        {% else %}
+                            <p>Current Subs: <strong>{{ "{:,.0f}".format(goal.current_elo).replace(',', '.') }}</strong></p>
+                        {% endif %}
+                        <p>Goal Subs: <strong>{{ "{:,.0f}".format(goal.goal_elo).replace(',', '.') }}</strong></p>
+                    {% elif goal.platform == 'custom' %}
+                        <div class="d-flex justify-content-between align-items-center">
+                            <p class="mb-0">Current Value: <strong>{{ "{:,.0f}".format(goal.current_elo).replace(',', '.') }}</strong></p>
+                            <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" 
+                                    data-bs-target="#updateValue{{ goal.id }}" aria-expanded="false">
+                                <i class="fas fa-edit"></i> Update
+                            </button>
+                        </div>
+                        
+                        <div class="collapse mt-2" id="updateValue{{ goal.id }}">
+                            <form method="POST" action="{{ url_for('update_custom_goal', goal_id=goal.id) }}" class="row g-2">
+                                <div class="col-8">
+                                    <input type="number" name="current_value" class="form-control form-control-sm" 
+                                        value="{{ goal.current_elo }}" required>
+                                </div>
+                                <div class="col-4">
+                                    <button type="submit" class="btn btn-sm btn-primary w-100">Save</button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <p>Goal Value: <strong>{{ "{:,.0f}".format(goal.goal_elo).replace(',', '.') }}</strong></p>
+                        <p class="text-muted small">Last updated: {{ goal.last_updated.strftime('%Y-%m-%d %H:%M') }}</p>
+                    {% endif %}
+
+                    <div class="progress mb-2" style="height: 1.25rem;">
+                        <div class="progress-bar {% if goal.progress() >= 100 %}bg-success{% elif goal.progress() >= 75 %}bg-info{% elif goal.progress() >= 50 %}bg-warning{% else %}bg-danger{% endif %}"
+                            role="progressbar" 
+                            style="width: {{ goal.progress() if goal.progress() is number else 0 }}%;">
+                            {{ goal.progress() if goal.progress() is number else 0 }}%
+                        </div>
+                    </div>
+
+                    {% if goal.progress() >= 100 %}
+                        <div class="alert alert-success py-1 mt-2 mb-0 text-center">
+                            🎉 Goal Completed!
+                        </div>
+                    {% endif %}
+
+                    <form method="POST" action="{{ url_for('delete_goal', goal_id=goal.id) }}" class="mt-3 text-end">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                            <i class="fas fa-trash-alt"></i> Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<script>
+function toggleFields() {
+    const platform = document.getElementById("platformSelect").value;
+    
+    const faceitFields = document.getElementById("faceitFields");
+    const youtubeFields = document.getElementById("youtubeFields");
+    const customFields = document.getElementById("customFields");
+    
+    faceitFields.style.display = "none";
+    youtubeFields.style.display = "none";
+    customFields.style.display = "none";
+    
+    document.querySelectorAll("#faceitFields input, #faceitFields select").forEach(el => el.required = false);
+    document.querySelectorAll("#youtubeFields input").forEach(el => el.required = false);
+    document.querySelectorAll("#customFields input").forEach(el => el.required = false);
+    
+    if (platform === "faceit") {
+        faceitFields.style.display = "flex";
+        document.querySelectorAll("#faceitFields input, #faceitFields select").forEach(el => el.required = true);
+    } else if (platform === "youtube") {
+        youtubeFields.style.display = "flex";
+        document.querySelectorAll("#youtubeFields input").forEach(el => el.required = true);
+    } else if (platform === "custom") {
+        customFields.style.display = "flex";
+        document.querySelectorAll("#customFields input").forEach(el => el.required = true);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    toggleFields();
+});
+</script>
+
+{% endblock %}
