@@ -40,6 +40,34 @@
             <input type="text" class="form-control" id="event_location" name="event_location" value="{{ event.location if event else '' }}">
         </div>
 
+        <div class="mb-3">
+            <label for="notification_enabled" class="form-label">Enable Notifications</label>
+            <input type="checkbox" id="notification_enabled" name="notification_enabled" 
+            {% if event and event.notification_enabled %}checked{% endif %}
+            onchange="toggleReminderTime(this)">
+        </div>
+        <div class="mb-3">
+            <label for="reminder_time" class="form-label">Reminder Time</label>
+            <select class="form-select" id="reminder_time" name="reminder_time" 
+            {% if event and event.notification_enabled %}{% else %}disabled{% endif %}>
+                <option value="60" {% if event and event.reminder_time == 60 %}selected{% endif %}>1 hour before</option>
+                <option value="30" {% if event and event.reminder_time == 30 %}selected{% endif %}>30 minutes before</option>
+                <option value="15" {% if event and event.reminder_time == 15 %}selected{% endif %}>15 minutes before</option>
+                <option value="5" {% if event and event.reminder_time == 5 %}selected{% endif %}>5 minutes before</option>
+            </select>
+        </div>
+
+        <script>
+            function toggleReminderTime(checkbox) {
+                const reminderDropdown = document.getElementById('reminder_time');
+                reminderDropdown.disabled = !checkbox.checked;
+            }
+            document.addEventListener('DOMContentLoaded', () => {
+                const checkbox = document.getElementById('notification_enabled');
+                toggleReminderTime(checkbox);
+            });
+        </script>
+
         <button type="submit" class="btn btn-success">
             {{ 'Update Event' if event else 'Add Event' }}
         </button>

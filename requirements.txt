@@ -1,7 +1,8 @@
-requests
-flask
-flask-bcrypt 
-flask-sqlalchemy 
-python-dotenv
-mailjet-rest
 APScheduler
+mailjet-rest
+flask
+flask-bcrypt
+flask-sqlalchemy
+python-dotenv
+requests
+sqlalchemy

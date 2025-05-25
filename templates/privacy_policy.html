@@ -1,0 +1,568 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.7;
+        color: #333;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+    }
+    
+    .container {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        margin: 20px auto;
+        padding: 0;
+        overflow: hidden;
+        max-width: 1200px;
+    }
+    
+    .header {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        color: white;
+        padding: 40px;
+        text-align: center;
+        border-radius: 20px 20px 0 0;
+    }
+    
+    .header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    
+    .header .lead {
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+    
+    .content-area {
+        padding: 40px;
+    }
+    
+    .section-header {
+        background: linear-gradient(135deg, #3498db, #2980b9);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 10px;
+        margin: 30px 0 20px 0;
+        font-weight: 600;
+        font-size: 1.2rem;
+        box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+    }
+    
+    .section-content {
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        margin-bottom: 25px;
+        border-left: 4px solid #3498db;
+    }
+    
+    .highlight-box {
+        background: linear-gradient(135deg, #e74c3c, #c0392b);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 20px 0;
+        box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+    }
+    
+    .info-box {
+        background: linear-gradient(135deg, #27ae60, #219a52);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 20px 0;
+        box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+    }
+    
+    .warning-box {
+        background: linear-gradient(135deg, #f39c12, #e67e22);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 20px 0;
+        box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3);
+    }
+    
+    .toc {
+        background: #ecf0f1;
+        border-radius: 10px;
+        padding: 25px;
+        margin-bottom: 30px;
+        border: 2px solid #bdc3c7;
+    }
+    
+    .toc h3 {
+        color: #2c3e50;
+        border-bottom: 2px solid #3498db;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+    }
+    
+    .toc ul {
+        list-style: none;
+        padding-left: 0;
+    }
+    
+    .toc li {
+        padding: 8px 0;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .toc a {
+        text-decoration: none;
+        color: #2980b9;
+        font-weight: 500;
+        transition: color 0.3s ease;
+    }
+    
+    .toc a:hover {
+        color: #3498db;
+    }
+    
+    .footer {
+        background: #2c3e50;
+        color: white;
+        text-align: center;
+        padding: 30px;
+        border-radius: 0 0 20px 20px;
+    }
+    
+    .effective-date {
+        background: #34495e;
+        color: white;
+        padding: 15px;
+        text-align: center;
+        font-weight: 600;
+    }
+    
+    ul.styled-list {
+        list-style: none;
+        padding-left: 0;
+    }
+    
+    ul.styled-list li {
+        padding: 8px 0;
+        padding-left: 25px;
+        position: relative;
+    }
+    
+    ul.styled-list li::before {
+        content: "✓";
+        position: absolute;
+        left: 0;
+        color: #27ae60;
+        font-weight: bold;
+    }
+    
+    .definition-box {
+        background: #e8f4fd;
+        border: 1px solid #3498db;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 15px 0;
+    }
+    
+    .definition-box strong {
+        color: #2980b9;
+    }
+    
+    @media (max-width: 768px) {
+        .header h1 {
+            font-size: 2rem;
+        }
+        
+        .content-area {
+            padding: 20px;
+        }
+    }
+</style>
+<div class="container">
+    <div class="header">
+        <h1>Privacy Policy</h1>
+        <p class="lead">Your privacy is important to us. This Privacy Policy explains how EventManager collects, uses, and protects your information in compliance with EU GDPR regulations.</p>
+    </div>
+    
+    <div class="effective-date">
+        <strong>Effective Date:</strong> January 1, 2025 | <strong>Last Updated:</strong> May 25, 2025
+    </div>
+    
+    <div class="content-area">
+        <div class="toc">
+            <h3>Table of Contents</h3>
+            <ul>
+                <li><a href="#controller">1. Data Controller Information</a></li>
+                <li><a href="#definitions">2. Important Definitions</a></li>
+                <li><a href="#information-collected">3. Information We Collect</a></li>
+                <li><a href="#legal-basis">4. Legal Basis for Processing</a></li>
+                <li><a href="#how-we-use">5. How We Use Your Information</a></li>
+                <li><a href="#sharing">6. Sharing Your Information</a></li>
+                <li><a href="#international-transfers">7. International Data Transfers</a></li>
+                <li><a href="#retention">8. Data Retention</a></li>
+                <li><a href="#security">9. Data Security</a></li>
+                <li><a href="#your-rights">10. Your Rights Under GDPR</a></li>
+                <li><a href="#cookies">11. Cookies and Similar Technologies</a></li>
+                <li><a href="#children">12. Children's Privacy</a></li>
+                <li><a href="#changes">13. Changes to This Policy</a></li>
+                <li><a href="#contact">14. Contact Information</a></li>
+                <li><a href="#complaints">15. Complaints and Supervisory Authority</a></li>
+            </ul>
+        </div>
+
+        <div class="info-box">
+            <strong>GDPR Compliance Notice:</strong> This Privacy Policy has been designed to comply with the General Data Protection Regulation (EU) 2016/679 (GDPR) and Slovenia's Personal Data Protection Act (ZVOP-1).
+        </div>
+
+        <div class="section-header" id="controller">
+            1. Data Controller Information
+        </div>
+        <div class="section-content">
+            <p>EventManager ("we," "us," or "our") is the data controller responsible for your personal data. We are based in Slovenia and operate under EU jurisdiction.</p>
+            
+            <div class="definition-box">
+                <strong>Contact Details:</strong><br>
+                Company: EventManager<br>
+                Location: Slovenia<br>
+                Email: lifeeventmanager666@gmail.com
+            </div>
+        </div>
+
+        <div class="section-header" id="definitions">
+            2. Important Definitions
+        </div>
+        <div class="section-content">
+            <div class="definition-box">
+                <strong>Personal Data:</strong> Any information relating to an identified or identifiable natural person, including but not limited to names, email addresses, IP addresses, and usage patterns.
+            </div>
+            <div class="definition-box">
+                <strong>Processing:</strong> Any operation performed on personal data, including collection, recording, organization, storage, adaptation, retrieval, consultation, use, disclosure, or erasure.
+            </div>
+            <div class="definition-box">
+                <strong>Data Subject:</strong> Any identified or identifiable natural person whose personal data is processed by us.
+            </div>
+        </div>
+
+        <div class="section-header" id="information-collected">
+            3. Information We Collect
+        </div>
+        <div class="section-content">
+            <h4>3.1 Information You Provide Directly</h4>
+            <ul class="styled-list">
+                <li><strong>Account Information:</strong> Name, email address, username, password (encrypted), and profile information</li>
+                <li><strong>Event Data:</strong> Event titles, descriptions, dates, locations, participant information, and any content you create or upload</li>
+                <li><strong>Communication Data:</strong> Messages sent through our platform, support requests, and feedback</li>
+                <li><strong>Payment Information:</strong> Billing details for premium features (processed through secure third-party payment processors)</li>
+                <li><strong>Preferences:</strong> Timezone settings, notification preferences, and other customization options</li>
+            </ul>
+
+            <h4>3.2 Information We Collect Automatically</h4>
+            <ul class="styled-list">
+                <li><strong>Technical Data:</strong> IP address, browser type and version, device information, operating system</li>
+                <li><strong>Usage Data:</strong> Pages visited, features used, time spent on platform, click patterns, and interaction data</li>
+                <li><strong>Log Data:</strong> Server logs, error reports, and security-related information</li>
+                <li><strong>Cookies and Similar Technologies:</strong> Session identifiers, authentication tokens, and preference storage</li>
+            </ul>
+
+            <h4>3.3 Information from Third Parties</h4>
+            <ul class="styled-list">
+                <li><strong>Social Media Integration:</strong> If you connect social media accounts, we may receive basic profile information</li>
+            </ul>
+        </div>
+
+        <div class="section-header" id="legal-basis">
+            4. Legal Basis for Processing
+        </div>
+        <div class="section-content">
+            <p>Under GDPR Article 6, we process your personal data based on the following legal grounds:</p>
+            
+            <h4>4.1 Contractual Necessity (Article 6(1)(b))</h4>
+            <p>Processing necessary for the performance of our Terms of Service contract, including account creation, service delivery, and core platform functionality.</p>
+
+            <h4>4.2 Legitimate Interest (Article 6(1)(f))</h4>
+            <p>Processing necessary for our legitimate interests, including platform security, fraud prevention, service improvement, and direct marketing (where consent is not required).</p>
+
+            <h4>4.3 Consent (Article 6(1)(a))</h4>
+            <p>Processing based on your explicit consent for specific purposes such as marketing communications, optional features, or data sharing.</p>
+
+            <h4>4.4 Legal Obligation (Article 6(1)(c))</h4>
+            <p>Processing necessary to comply with legal obligations, including tax requirements, law enforcement requests, and regulatory compliance.</p>
+        </div>
+
+        <div class="section-header" id="how-we-use">
+            5. How We Use Your Information
+        </div>
+        <div class="section-content">
+            <h4>5.1 Core Service Provision</h4>
+            <ul class="styled-list">
+                <li>Creating and managing your account</li>
+                <li>Enabling event creation, management, and participation</li>
+                <li>Providing timezone-specific scheduling and notifications</li>
+                <li>Processing payments for premium features</li>
+            </ul>
+
+            <h4>5.2 Communication and Support</h4>
+            <ul class="styled-list">
+                <li>Sending service-related notifications and updates</li>
+                <li>Responding to your support requests and inquiries</li>
+                <li>Providing technical assistance and troubleshooting</li>
+                <li>Sending important security and policy updates</li>
+            </ul>
+
+            <h4>5.3 Platform Improvement and Analytics</h4>
+            <ul class="styled-list">
+                <li>Analyzing usage patterns to improve our services</li>
+                <li>Conducting research and development for new features</li>
+                <li>Monitoring platform performance and stability</li>
+                <li>Creating aggregated, anonymized statistics</li>
+            </ul>
+
+            <h4>5.4 Security and Compliance</h4>
+            <ul class="styled-list">
+                <li>Detecting and preventing fraud, abuse, and security threats</li>
+                <li>Ensuring compliance with our Terms of Service</li>
+                <li>Protecting the rights and safety of our users</li>
+                <li>Complying with legal obligations and law enforcement requests</li>
+            </ul>
+
+            <h4>5.5 Marketing and Promotional Activities</h4>
+            <ul class="styled-list">
+                <li>Sending promotional emails about new features and services</li>
+                <li>Providing personalized content and recommendations</li>
+                <li>Conducting surveys and market research</li>
+            </ul>
+        </div>
+
+        <div class="section-header" id="sharing">
+            6. Sharing Your Information
+        </div>
+        <div class="section-content">
+            <div class="warning-box">
+                <strong>Important:</strong> We do not sell, trade, or rent your personal information to third parties for their marketing purposes.
+            </div>
+
+            <h4>6.1 Information Sharing Within EventManager</h4>
+            <p>Your private event data and personal information is only accessible by authorized EventManager team members who need access to provide our services, maintain security, or comply with legal obligations.</p>
+
+            <h4>6.2 Third-Party Service Providers</h4>
+            <p>We may share limited information with trusted service providers who assist us in:</p>
+            <ul class="styled-list">
+                <li>Cloud hosting and data storage services</li>
+                <li>Payment processing (payment processors do not store your full payment details)</li>
+                <li>Email delivery and communication services</li>
+                <li>Analytics and performance monitoring</li>
+                <li>Customer support tools</li>
+            </ul>
+            <p>All service providers are contractually bound to protect your information and use it only for specified purposes.</p>
+
+            <h4>6.3 Legal Requirements and Protection</h4>
+            <p>We may disclose your information when required by law or to:</p>
+            <ul class="styled-list">
+                <li>Comply with legal processes, court orders, or government requests</li>
+                <li>Protect our rights, property, or safety</li>
+                <li>Protect the rights, property, or safety of our users</li>
+                <li>Investigate fraud or security issues</li>
+                <li>Enforce our Terms of Service</li>
+            </ul>
+
+            <h4>6.4 Business Transfers</h4>
+            <p>In the event of a merger, acquisition, or sale of assets, your information may be transferred as part of the business transaction. You will be notified of any such change via email and prominent notice on our platform.</p>
+        </div>
+
+        <div class="section-header" id="international-transfers">
+            7. International Data Transfers
+        </div>
+        <div class="section-content">
+            <p>As we are based in Slovenia (EU), your data is primarily processed within the European Economic Area (EEA). If we transfer data outside the EEA, we ensure adequate protection through:</p>
+            <ul class="styled-list">
+                <li>Standard Contractual Clauses approved by the European Commission</li>
+                <li>Adequacy decisions by the European Commission</li>
+                <li>Other appropriate safeguards as required by GDPR</li>
+            </ul>
+            <p>You have the right to obtain information about these safeguards by contacting us.</p>
+        </div>
+
+        <div class="section-header" id="retention">
+            8. Data Retention
+        </div>
+        <div class="section-content">
+            <p>We retain your personal data only as long as necessary for the purposes outlined in this policy:</p>
+            
+            <h4>8.1 Account Data</h4>
+            <p>Retained while your account is active and for up to 2 years after account deletion to comply with legal obligations and resolve disputes.</p>
+
+            <h4>8.2 Event Data</h4>
+            <p>Retained according to your preferences and legal requirements. Event data is typically kept for the duration of the event and up to 1 year afterward unless you request earlier deletion.</p>
+
+            <h4>8.3 Communication Data</h4>
+            <p>Support communications retained for up to 3 years for quality assurance and legal compliance.</p>
+
+            <h4>8.4 Technical and Usage Data</h4>
+            <p>Log files and analytics data typically retained for up to 12 months, with aggregated anonymized data potentially retained longer for service improvement.</p>
+
+            <div class="info-box">
+                <strong>Your Control:</strong> You can request deletion of your data at any time, subject to legal retention requirements. We will inform you if we cannot delete specific data due to legal obligations.
+            </div>
+        </div>
+
+        <div class="section-header" id="security">
+            9. Data Security
+        </div>
+        <div class="section-content">
+            <p>We implement comprehensive technical and organizational measures to protect your personal data:</p>
+
+            <h4>9.1 Technical Safeguards</h4>
+            <ul class="styled-list">
+                <li>End-to-end encryption for data transmission (HTTPS/TLS)</li>
+                <li>Encryption of sensitive data at rest</li>
+                <li>Regular security assessments and penetration testing</li>
+                <li>Secure authentication and access controls</li>
+                <li>Regular software updates and security patches</li>
+            </ul>
+
+            <h4>9.2 Organizational Safeguards</h4>
+            <ul class="styled-list">
+                <li>Staff training on data protection and privacy</li>
+                <li>Access controls and principle of least privilege</li>
+                <li>Data breach response procedures</li>
+                <li>Regular privacy impact assessments</li>
+                <li>Vendor security assessments and contracts</li>
+            </ul>
+
+            <h4>9.3 Data Breach Notification</h4>
+            <p>In the unlikely event of a data breach that poses a risk to your rights and freedoms, we will notify you within 72 hours as required by GDPR, along with the relevant supervisory authority.</p>
+        </div>
+
+        <div class="section-header" id="your-rights">
+            10. Your Rights Under GDPR
+        </div>
+        <div class="section-content">
+            <p>As a data subject under GDPR, you have the following rights:</p>
+
+            <h4>10.1 Right of Access (Article 15)</h4>
+            <p>You can request a copy of all personal data we hold about you, including details about how it's processed.</p>
+
+            <h4>10.2 Right to Rectification (Article 16)</h4>
+            <p>You can request correction of inaccurate or incomplete personal data.</p>
+
+            <h4>10.3 Right to Erasure - "Right to be Forgotten" (Article 17)</h4>
+            <p>You can request deletion of your personal data in certain circumstances, including when it's no longer necessary for the original purpose.</p>
+
+            <h4>10.4 Right to Restrict Processing (Article 18)</h4>
+            <p>You can request that we limit how we use your data in certain circumstances.</p>
+
+            <h4>10.5 Right to Object (Article 21)</h4>
+            <p>You can object to processing based on legitimate interests, including direct marketing.</p>
+
+            <h4>10.6 Rights Related to Automated Decision-Making (Article 22)</h4>
+            <p>You have rights regarding automated decision-making and profiling, though we do not currently engage in significant automated decision-making.</p>
+
+            <h4>10.7 Right to Withdraw Consent</h4>
+            <p>Where processing is based on consent, you can withdraw it at any time without affecting the lawfulness of processing before withdrawal.</p>
+
+            <div class="highlight-box">
+                <strong>Exercising Your Rights:</strong> To exercise any of these rights, contact us at lifeeventmanager666@gmail.com. We will respond within one month and may request verification of your identity for security purposes.
+            </div>
+        </div>
+
+        <div class="section-header" id="cookies">
+            11. Cookies and Similar Technologies
+        </div>
+        <div class="section-content">
+            <h4>11.1 What Are Cookies</h4>
+            <p>Cookies are small text files stored on your device that help us provide and improve our services.</p>
+
+            <h4>11.2 Types of Cookies We Use</h4>
+            <ul class="styled-list">
+                <li><strong>Essential Cookies:</strong> Necessary for basic platform functionality, security, and authentication</li>
+                <li><strong>Performance Cookies:</strong> Help us understand how you use our platform to improve performance</li>
+                <li><strong>Functional Cookies:</strong> Remember your preferences and settings</li>
+                <li><strong>Analytics Cookies:</strong> Provide insights into usage patterns (anonymized)</li>
+            </ul>
+
+            <h4>11.3 Managing Cookies</h4>
+            <p>You can control cookies through your browser settings. However, disabling essential cookies may affect platform functionality. You can manage non-essential cookies through our cookie preference center.</p>
+        </div>
+
+        <div class="section-header" id="children">
+            12. Children's Privacy
+        </div>
+        <div class="section-content">
+            <p>EventManager is not intended for children under 16 years of age (or the minimum age for digital consent in their country). We do not knowingly collect personal information from children under this age.</p>
+            
+            <p>If we become aware that we have collected personal information from a child under the applicable age without proper consent, we will take steps to delete such information promptly.</p>
+
+            <p>If you are a parent or guardian and believe your child has provided us with personal information, please contact us immediately.</p>
+        </div>
+
+        <div class="section-header" id="changes">
+            13. Changes to This Privacy Policy
+        </div>
+        <div class="section-content">
+            <p>We may update this Privacy Policy periodically to reflect changes in our practices, technology, legal requirements, or other factors.</p>
+
+            <h4>13.1 Notification of Changes</h4>
+            <ul class="styled-list">
+                <li>Material changes will be communicated via email to registered users</li>
+                <li>All changes will be posted on our platform with an updated effective date</li>
+                <li>Continued use of our services after changes constitutes acceptance of the updated policy</li>
+            </ul>
+
+            <h4>13.2 Version History</h4>
+            <p>Previous versions of this policy are available upon request for your review.</p>
+        </div>
+
+        <div class="section-header" id="contact">
+            14. Contact Information
+        </div>
+        <div class="section-content">
+            <p>For any questions, concerns, or requests related to this Privacy Policy or your personal data, please contact us:</p>
+
+            <div class="info-box">
+                <strong>Primary Contact:</strong><br>
+                Email: lifeeventmanager666@gmail.com<br>
+                
+                <strong>Mailing Address:</strong><br>
+                EventManager<br>
+                Slovenia<br>
+                European Union
+            </div>
+
+            <p>We aim to respond to all privacy-related inquiries within 30 days, and GDPR requests within one month as required by law.</p>
+        </div>
+
+        <div class="section-header" id="complaints">
+            15. Complaints and Supervisory Authority
+        </div>
+        <div class="section-content">
+            <p>If you believe we have not handled your personal data in accordance with this policy or GDPR requirements, you have the right to lodge a complaint.</p>
+
+            <h4>15.1 Internal Complaints</h4>
+            <p>Please contact us first at lifeeventmanager666@gmail.com so we can attempt to resolve your concern directly.</p>
+
+            <h4>15.2 Supervisory Authority</h4>
+            <p>As we are based in Slovenia, our lead supervisory authority is:</p>
+            
+            <div class="definition-box">
+                <strong>Information Commissioner of the Republic of Slovenia</strong><br>
+                Website: https://www.ip-rs.si/<br>
+                You also have the right to contact the supervisory authority in your country of residence.
+            </div>
+
+            <p>You have the right to lodge a complaint with a supervisory authority without first contacting us, though we encourage direct communication to resolve issues efficiently.</p>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p><strong>EventManager Privacy Policy</strong></p>
+        <p>This policy complies with EU GDPR requirements and Slovenia's data protection laws.</p>
+        <p>© 2025 EventManager. All rights reserved.</p>
+    </div>
+</div>
+{% endblock %}

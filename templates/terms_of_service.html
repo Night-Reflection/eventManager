@@ -1,0 +1,1015 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.7;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin: 20px auto;
+            padding: 0;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            border-radius: 20px 20px 0 0;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header .lead {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .content-area {
+            padding: 40px;
+        }
+        
+        .section-header {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin: 30px 0 20px 0;
+            font-weight: 600;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+        
+        .section-content {
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .highlight-box {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+        }
+        
+        .info-box {
+            background: linear-gradient(135deg, #27ae60, #219a52);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+        }
+        
+        .warning-box {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3);
+        }
+        
+        .toc {
+            background: #ecf0f1;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 2px solid #bdc3c7;
+        }
+        
+        .toc h3 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .toc ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .toc li {
+            padding: 8px 0;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .toc a {
+            text-decoration: none;
+            color: #2980b9;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        
+        .toc a:hover {
+            color: #3498db;
+        }
+        
+        .footer {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 30px;
+            border-radius: 0 0 20px 20px;
+        }
+        
+        .effective-date {
+            background: #34495e;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        ul.styled-list {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        ul.styled-list li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+        
+        ul.styled-list li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #27ae60;
+            font-weight: bold;
+        }
+        
+        .definition-box {
+            background: #e8f4fd;
+            border: 1px solid #3498db;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .definition-box strong {
+            color: #2980b9;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .content-area {
+                padding: 20px;
+            }
+        }
+
+        .gdpr-boxx {
+            background: linear-gradient(135deg, #8e44ad, #9b59b6) !important;
+            color: white !important;
+            padding: 20px !important;
+            border-radius: 10px !important;
+            margin: 20px 0 !important;
+            box-shadow: 0 4px 15px rgba(142, 68, 173, 0.3) !important;
+            display: block !important;
+        }
+    </style>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-calendar-alt me-3"></i>EventManager</h1>
+            <p class="lead">Terms of Service & User Agreement</p>
+        </div>
+        
+        <div class="effective-date">
+            <i class="fas fa-calendar me-2"></i>Effective Date: January 1, 2025 | Last Updated: May 23, 2025
+        </div>
+        
+        <div class="content-area">
+            <div class="highlight-box">
+                <h4><i class="fas fa-exclamation-triangle me-2"></i>Important Notice</h4>
+                <p class="mb-0">By accessing and using EventManager, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service and all applicable laws and regulations. If you do not agree with these terms, please discontinue use of our service immediately.</p>
+            </div>
+            
+            <div class="toc">
+                <h3><i class="fas fa-list me-2"></i>Table of Contents</h3>
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul>
+                            <li><a href="#acceptance">1. Acceptance of Terms</a></li>
+                            <li><a href="#definitions">2. Definitions</a></li>
+                            <li><a href="#eligibility">3. Eligibility and Registration</a></li>
+                            <li><a href="#account">4. Account Management</a></li>
+                            <li><a href="#services">5. Service Description</a></li>
+                            <li><a href="#conduct">6. User Conduct and Behavior</a></li>
+                            <li><a href="#content">7. Content and Intellectual Property</a></li>
+                            <li><a href="#privacy">8. Privacy and Data Protection</a></li>
+                            <li><a href="#payments">9. Payment Terms</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul>
+                            <li><a href="#suspension">10. Account Suspension and Termination</a></li>
+                            <li><a href="#liability">11. Limitation of Liability</a></li>
+                            <li><a href="#indemnification">12. Indemnification</a></li>
+                            <li><a href="#disputes">13. Dispute Resolution</a></li>
+                            <li><a href="#modifications">14. Modifications to Service</a></li>
+                            <li><a href="#governing">15. Governing Law</a></li>
+                            <li><a href="#miscellaneous">16. Miscellaneous</a></li>
+                            <li><a href="#contact">17. Contact Information</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <section id="acceptance">
+                <div class="section-header">
+                    <i class="fas fa-handshake me-2"></i>1. Acceptance of Terms
+                </div>
+                <div class="section-content">
+                    <p>These Terms of Service ("Terms") constitute a legally binding agreement between you ("User," "you," or "your") and EventManager ("we," "us," "our," or "Company") regarding your use of the EventManager platform, website, mobile application, and all related services (collectively, the "Service").</p>
+                    
+                    <p>By creating an account, accessing, browsing, or using any part of our Service, you explicitly agree to:</p>
+                    <ul class="styled-list">
+                        <li>Be bound by these Terms in their entirety</li>
+                        <li>Comply with all applicable local, state, national, and international laws</li>
+                        <li>Accept responsibility for all activities under your account</li>
+                        <li>Acknowledge that you have the legal capacity to enter into this agreement</li>
+                    </ul>
+                    
+                    <div class="warning-box">
+                        <strong><i class="fas fa-exclamation-triangle me-2"></i>Legal Binding:</strong> This agreement is legally enforceable. If you do not agree with any part of these terms, you must immediately cease using our Service and delete your account.
+                    </div>
+                </div>
+            </section>
+            
+            <section id="definitions">
+                <div class="section-header">
+                    <i class="fas fa-book me-2"></i>2. Definitions
+                </div>
+                <div class="section-content">
+                    <div class="definition-box">
+                        <strong>"Account"</strong> refers to the user profile created when registering for EventManager services.
+                    </div>
+                    <div class="definition-box">
+                        <strong>"Content"</strong> includes all text, images, videos, audio, data, information, and other materials uploaded, posted, or transmitted through the Service.
+                    </div>
+                    <div class="definition-box">
+                        <strong>"Event"</strong> means any gathering, meeting, celebration, or occasion created, organized, or promoted through our platform.
+                    </div>
+                    <div class="definition-box">
+                        <strong>"User Generated Content" (UGC)</strong> refers to any content created, uploaded, or shared by users on the platform.
+                    </div>
+                    <div class="definition-box">
+                        <strong>"Personal Data"</strong> means any information relating to an identified or identifiable natural person.
+                    </div>
+                    <div class="definition-box">
+                        <strong>"Third-Party Services"</strong> refers to external platforms, APIs, or services integrated with EventManager.
+                    </div>
+                </div>
+            </section>
+            
+            <section id="eligibility">
+                <div class="section-header">
+                    <i class="fas fa-user-check me-2"></i>3. Eligibility and Registration
+                </div>
+                <div class="section-content">
+                    <h5>Age Requirements</h5>
+                    <div class="gdpr-boxx">
+                        <strong><i class="fas fa-child me-2"></i>Minimum Age to Use the Service:</strong>
+                        <ul class="mb-0">
+                            <li>Users must be at least <strong>13 years old</strong> to register and use the service</li>
+                            <li>Users located in the <strong>European Union</strong> must be at least <strong>16 years old</strong></li>
+                            <li>These requirements ensure compliance with international data protection laws, including GDPR</li>
+                            <li>Enhanced protections apply to all users under 18</li>
+                        </ul>
+                    </div>
+
+                    <h5>Note on Age Verification</h5>
+                    <p>We may ask you for your date of birth and location if we have reason to believe you are under the minimum age required to use this web app in your region. This helps us ensure compliance with applicable age restrictions.</p>
+                </div>
+            </section>
+            
+            <section id="account">
+                <div class="section-header">
+                    <i class="fas fa-user-cog me-2"></i>4. Account Management
+                </div>
+                <div class="section-content">
+                    <h5>Account Security</h5>
+                    <p>You are solely responsible for:</p>
+                    <ul class="styled-list">
+                        <li>Maintaining the confidentiality of your login credentials</li>
+                        <li>All activities that occur under your account</li>
+                        <li>Immediately notifying us of any unauthorized access</li>
+                        <li>Using strong, unique passwords</li>
+                        <li>Enabling two-factor authentication when available</li>
+                    </ul>
+                    
+                    <h5>Account Transfer and Sharing</h5>
+                    <div class="highlight-box">
+                        <strong>Strictly Prohibited:</strong> Accounts are personal and non-transferable. You may not sell, transfer, or share your account credentials with any third party.
+                    </div>
+                    
+                    <h5>Account Deactivation</h5>
+                    <p>You may deactivate your account at any time through your account settings. Upon deactivation:</p>
+                    <ul class="styled-list">
+                        <li>Your profile will be hidden from other users</li>
+                        <li>Active events may remain visible until conclusion</li>
+                        <li>Certain data may be retained per our Privacy Policy</li>
+                        <li>Premium subscriptions will continue until expiration</li>
+                    </ul>
+                </div>
+            </section>
+            
+            <section id="services">
+                <div class="section-header">
+                    <i class="fas fa-cogs me-2"></i>5. Service Description
+                </div>
+                <div class="section-content">
+                    <h5>Core Features</h5>
+                    <p>EventManager provides the following services:</p>
+                    <ul class="styled-list">
+                        <li>Event creation and management tools</li>
+                        <li>Attendee registration and tracking</li>
+                        <li>Calendar integration and scheduling</li>
+                        <li>Communication and notification systems</li>
+                        <li>Sports club and esports team following</li>
+                        <li>Social networking features</li>
+                        <li>Analytics and reporting tools</li>
+                        <li>Mobile application access</li>
+                    </ul>
+                    
+                    <h5>Service Availability</h5>
+                    <div class="info-box">
+                        <strong><i class="fas fa-info-circle me-2"></i>Service Level:</strong> We strive for 99.9% uptime but cannot guarantee uninterrupted service. Scheduled maintenance will be announced in advance when possible.
+                    </div>
+                    
+                    <h5>Beta Features</h5>
+                    <p>Some features may be offered in beta or experimental form. These features:</p>
+                    <ul class="styled-list">
+                        <li>May have limited functionality or reliability</li>
+                        <li>Are provided "as-is" without warranty</li>
+                        <li>May be discontinued without notice</li>
+                        <li>Should not be relied upon for critical events</li>
+                    </ul>
+                </div>
+            </section>
+            
+            <section id="conduct">
+                <div class="section-header">
+                    <i class="fas fa-balance-scale me-2"></i>6. User Conduct and Behavior
+                </div>
+                <div class="section-content">
+                    <h5>Respectful Behavior Standards</h5>
+                    <p>All users must maintain respectful and professional conduct. This includes:</p>
+                    <ul class="styled-list">
+                        <li>Treating all users with dignity and respect</li>
+                        <li>Using appropriate language in all communications</li>
+                        <li>Respecting cultural, religious, and personal differences</li>
+                        <li>Constructive participation in community discussions</li>
+                    </ul>
+                    
+                    <h5>Strictly Prohibited Activities</h5>
+                    <div class="highlight-box">
+                        <strong><i class="fas fa-ban me-2"></i>Zero Tolerance Policy</strong>
+                        <p>The following activities will result in immediate account suspension or termination:</p>
+                        <ul>
+                            <li><strong>Harassment and Bullying:</strong> Targeting individuals with threatening, intimidating, or abusive behavior</li>
+                            <li><strong>Discrimination:</strong> Content or behavior targeting race, ethnicity, gender, sexual orientation, religion, disability, or nationality</li>
+                            <li><strong>Hate Speech:</strong> Language promoting violence or hatred against protected groups</li>
+                            <li><strong>Sexual Content:</strong> Explicit sexual material, nudity, or sexually suggestive content</li>
+                            <li><strong>Violence and Threats:</strong> Content promoting violence or threatening harm to individuals or groups</li>
+                            <li><strong>Illegal Activities:</strong> Promoting or facilitating illegal activities or services</li>
+                            <li><strong>Spam and Solicitation:</strong> Unsolicited commercial messages or repetitive content</li>
+                            <li><strong>Impersonation:</strong> Pretending to be another person or entity</li>
+                            <li><strong>Privacy Violations:</strong> Sharing others' personal information without consent</li>
+                            <li><strong>System Abuse:</strong> Attempting to breach security or overwhelm our systems</li>
+                        </ul>
+                    </div>
+                    
+                    <h5>Community Guidelines</h5>
+                    <div class="info-box">
+                        <strong>Building a Positive Community:</strong>
+                        <p>We encourage users to:</p>
+                        <ul class="mb-0">
+                            <li>Share helpful and relevant information</li>
+                            <li>Provide constructive feedback</li>
+                            <li>Support other community members</li>
+                            <li>Report inappropriate behavior</li>
+                            <li>Participate in community events and discussions</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="content">
+                <div class="section-header">
+                    <i class="fas fa-copyright me-2"></i>7. Content and Intellectual Property
+                </div>
+                <div class="section-content">
+                    <h5>User-Generated Content</h5>
+                    <p>You retain ownership of content you create and upload to EventManager. However, by posting content, you grant us:</p>
+                    <ul class="styled-list">
+                        <li>A worldwide, non-exclusive, royalty-free license</li>
+                        <li>Rights to use, display, reproduce, and distribute your content</li>
+                        <li>Permission to modify content for technical or operational purposes</li>
+                        <li>Rights to use content for promotional and marketing purposes</li>
+                    </ul>
+                    
+                    <h5>Content Standards</h5>
+                    <p>All user content must:</p>
+                    <ul class="styled-list">
+                        <li>Be original or properly licensed</li>
+                        <li>Not infringe on third-party rights</li>
+                        <li>Comply with applicable laws and regulations</li>
+                        <li>Meet our community standards</li>
+                        <li>Be appropriate for all audiences when public</li>
+                    </ul>
+                    
+                    <h5>Intellectual Property Protection</h5>
+                    <div class="warning-box">
+                        <strong><i class="fas fa-shield-alt me-2"></i>Copyright Protection:</strong>
+                        <p>We respect intellectual property rights and will respond to valid DMCA takedown notices. Repeat copyright infringers will have their accounts terminated.</p>
+                    </div>
+                    
+                    <h5>EventManager Intellectual Property</h5>
+                    <p>Our platform, including but not limited to software, designs, logos, trademarks, and proprietary features, remains our exclusive property. Users may not:</p>
+                    <ul class="styled-list">
+                        <li>Copy, modify, or reverse engineer our software</li>
+                        <li>Use our trademarks without permission</li>
+                        <li>Create derivative works based on our platform</li>
+                        <li>Attempt to extract or replicate our algorithms</li>
+                    </ul>
+                </div>
+            </section>
+            
+            <section id="privacy">
+                <div class="section-header">
+                    <i class="fas fa-user-shield me-2"></i>8. Privacy and Data Protection
+                </div>
+                <div class="section-content">
+                    <h5>GDPR Compliance Framework</h5>
+                    <div class="gdpr-boxx">
+                        <strong><i class="fas fa-shield-alt me-2"></i>Your GDPR Rights:</strong>
+                        <ul class="mb-0">
+                            <li><strong>Right of Access (Art. 15):</strong> Request copies of your personal data</li>
+                            <li><strong>Right to Rectification (Art. 16):</strong> Correct inaccurate personal data</li>
+                            <li><strong>Right to Erasure (Art. 17):</strong> Request deletion of your data</li>
+                            <li><strong>Right to Restrict Processing (Art. 18):</strong> Limit how we use your data</li>
+                            <li><strong>Right to Data Portability (Art. 20):</strong> Receive your data in portable format</li>
+                            <li><strong>Right to Object (Art. 21):</strong> Object to processing based on legitimate interests</li>
+                            <li><strong>Rights Related to Automated Decision-making (Art. 22):</strong> Contest automated decisions</li>
+                        </ul>
+                    </div>
+                    
+                    <h5>Legal Basis for Processing</h5>
+                    <p>We process your personal data based on the following legal grounds (GDPR Art. 6):</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <strong>Contractual Necessity:</strong>
+                                <ul class="mb-0">
+                                    <li>Account creation and management</li>
+                                    <li>Service provision</li>
+                                    <li>Payment processing</li>
+                                    <li>Customer support</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <strong>Legitimate Interests:</strong>
+                                <ul class="mb-0">
+                                    <li>Platform security and fraud prevention</li>
+                                    <li>Service improvement and analytics</li>
+                                    <li>Marketing</li>
+                                    <li>Legal compliance</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h5>Data Retention Periods</h5>
+                    <ul class="styled-list">
+                        <li><strong>Account Data:</strong> Retained while account is active + 30 days after deletion</li>
+                        <li><strong>Communication Records:</strong> Retained for 3 years for legal compliance</li>
+                        <li><strong>Payment Data:</strong> Retained as required by tax and accounting laws (7 years in Slovenia)</li>
+                        <li><strong>Security Logs:</strong> Retained for 1 year for security purposes</li>
+                    </ul>
+                    
+                    <h5>International Data Transfers</h5>
+                    <div class="warning-box">
+                        <strong><i class="fas fa-globe me-2"></i>Data Transfer Safeguards:</strong>
+                        <p>When transferring data outside the EU/EEA, we ensure adequate protection through:</p>
+                        <ul class="mb-0">
+                            <li>European Commission adequacy decisions</li>
+                            <li>Standard Contractual Clauses (SCCs)</li>
+                            <li>Binding Corporate Rules where applicable</li>
+                            <li>Additional technical and organizational measures</li>
+                        </ul>
+                    </div>
+                    
+                    <h5>Data Protection Officer</h5>
+                    <div class="info-box">
+                        <strong><i class="fas fa-user-tie me-2"></i>Contact Our DPO:</strong>
+                        <p><strong>Email:</strong> dpo@eventmanager.si</p>
+                        <p class="mb-0"><strong>Purpose:</strong> GDPR-related inquiries, data protection concerns, exercising your rights</p>
+                    </div>
+                    
+                    <h5>Supervisory Authority</h5>
+                    <p>You have the right to lodge a complaint with the Slovenian supervisory authority:</p>
+                    <div class="info-box">
+                        <strong>Information Commissioner of Slovenia</strong><br>
+                        Dunajska cesta 22<br>
+                        1000 Ljubljana, Slovenia<br>
+                        <strong>Website:</strong> www.ip-rs.si<br>
+                        <strong>Email:</strong> gp.ip@ip-rs.si
+                    </div>
+                </div>
+            </section>
+            
+            <section id="payments">
+                <div class="section-header">
+                    <i class="fas fa-credit-card me-2"></i>9. Payment Terms (EU Consumer Rights)
+                </div>
+                <div class="section-content">
+                    <h5>EU Consumer Rights Directive Compliance</h5>
+                    <div class="gdpr-boxx">
+                        <strong><i class="fas fa-shield-alt me-2"></i>14-Day Cooling-Off Period:</strong>
+                        <p>EU consumers have the right to withdraw from premium subscriptions within 14 days of purchase without giving any reason, except:</p>
+                        <ul class="mb-0">
+                            <li>Digital services already fully performed with your express consent</li>
+                            <li>Services you've explicitly requested to begin immediately</li>
+                            <li>Customized or personalized services</li>
+                        </ul>
+                    </div>
+                    
+                    <h5>Refund Timeline</h5>
+                    <div class="info-box">
+                        <strong>EU-Compliant Refunds:</strong>
+                        <ul class="mb-0">
+                            <li>Refunds processed within 14 days of withdrawal notice</li>
+                            <li>Same payment method used for original transaction</li>
+                            <li>No additional charges for refunds</li>
+                            <li>Proportional refunds for partially used services</li>
+                        </ul>
+                    </div>
+                    
+                    <h5>Currency and Taxation</h5>
+                    <ul class="styled-list">
+                        <li>Prices displayed include applicable VAT</li>
+                        <li>VAT rates vary by EU member state</li>
+                        <li>Slovenian VAT (22%) applies to Slovenian customers</li>
+                        <li>Reverse charge mechanism for EU businesses with valid VAT ID</li>
+                    </ul>
+                </div>
+            </section>
+            
+            <section id="suspension">
+                <div class="section-header">
+                    <i class="fas fa-user-times me-2"></i>10. Account Suspension and Termination
+                </div>
+                <div class="section-content">
+                    <h5>Grounds for Account Action</h5>
+                    <p>EventManager reserves the right to suspend or terminate accounts for:</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="highlight-box">
+                                <strong>Immediate Termination:</strong>
+                                <ul class="mb-0">
+                                    <li>Illegal activities</li>
+                                    <li>Harassment or threats</li>
+                                    <li>Hate speech or discrimination</li>
+                                    <li>Intellectual property violations</li>
+                                    <li>System security breaches</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="warning-box">
+                                <strong>Suspension (Warning):</strong>
+                                <ul class="mb-0">
+                                    <li>Minor policy violations</li>
+                                    <li>Spam or excessive posting</li>
+                                    <li>Inappropriate content</li>
+                                    <li>Community guideline breaches</li>
+                                    <li>Payment issues</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h5>Due Process</h5>
+                    <p>Before account termination, we typically:</p>
+                    <ul class="styled-list">
+                        <li>Investigate reported violations thoroughly</li>
+                        <li>Provide opportunity for user explanation when appropriate</li>
+                        <li>Issue warnings for minor infractions</li>
+                        <li>Document all policy violations</li>
+                        <li>Consider user's history and intent</li>
+                    </ul>
+                    
+                    <h5>Appeal Process</h5>
+                    <div class="info-box">
+                        <strong><i class="fas fa-gavel me-2"></i>Right to Appeal:</strong>
+                        <p>Suspended or terminated users may appeal decisions by:</p>
+                        <ul class="mb-0">
+                            <li>Submitting a detailed appeal within 14 days</li>
+                            <li>Providing evidence of compliance or error</li>
+                            <li>Demonstrating corrective measures taken</li>
+                            <li>Agreeing to enhanced monitoring if reinstated</li>
+                        </ul>
+                    </div>
+                    
+                    <h5>Effects of Termination</h5>
+                    <p>Upon account termination:</p>
+                    <ul class="styled-list">
+                        <li>Access to the platform is immediately revoked</li>
+                        <li>User data may be deleted after 30 days</li>
+                        <li>Premium subscriptions are forfeited without refund</li>
+                        <li>New account creation is prohibited</li>
+                        <li>Legal action may be pursued for severe violations</li>
+                    </ul>
+                </div>
+            </section>
+            
+            <section id="liability">
+                <div class="section-header">
+                    <i class="fas fa-exclamation-triangle me-2"></i>11. Limitation of Liability
+                </div>
+                <div class="section-content">
+                    <h5>Service Disclaimer</h5>
+                    <div class="highlight-box">
+                        <strong><i class="fas fa-info-circle me-2"></i>"AS IS" Service:</strong>
+                        <p>EventManager is provided "as is" and "as available" without warranties of any kind, either express or implied, including but not limited to:</p>
+                        <ul class="mb-0">
+                            <li>Warranties of merchantability</li>
+                            <li>Fitness for a particular purpose</li>
+                            <li>Non-infringement of third-party rights</li>
+                            <li>Uninterrupted or error-free operation</li>
+                            <li>Accuracy or reliability of information</li>
+                        </ul>
+                    </div>
+                    
+                    <h5>Limitation of Damages</h5>
+                    <p>To the maximum extent permitted by law, EventManager shall not be liable for:</p>
+                    <ul class="styled-list">
+                        <li>Indirect, incidental, or consequential damages</li>
+                        <li>Loss of profits, data, or business opportunities</li>
+                        <li>Personal injury or property damage</li>
+                        <li>Third-party actions or content</li>
+                        <li>Service interruptions or technical failures</li>
+                        <li>Unauthorized access to your account or data</li>
+                    </ul>
+                    
+                    <h5>Maximum Liability Cap</h5>
+                    <div class="warning-box">
+                        <strong>Liability Limit:</strong> Our total liability for all claims shall not exceed the greater of $100 or the amount paid by you for our services in the 12 months preceding the claim.
+                    </div>
+                    
+                    <h5>Third-Party Services</h5>
+                    <p>EventManager integrates with various third-party services. We are not responsible for:</p>
+                    <ul class="styled-list">
+                        <li>Third-party service availability or performance</li>
+                        <li>Data breaches at third-party providers</li>
+                        <li>Changes to third-party APIs or services</li>
+                        <li>Third-party billing or payment issues</li>
+                        <li>Content or actions of external service providers</li>
+                    </ul>
+                </div>
+            </section>
+            
+            <section id="indemnification">
+                <div class="section-header">
+                    <i class="fas fa-shield-alt me-2"></i>12. Indemnification
+                </div>
+                <div class="section-content">
+                    <h5>User Indemnification Obligations</h5>
+                    <p>You agree to indemnify, defend, and hold harmless EventManager, its officers, directors, employees, and agents from and against any and all claims, damages, costs, and expenses (including reasonable attorneys' fees) arising from or related to:</p>
+                    
+                    <ul class="styled-list">
+                        <li>Your use of the EventManager platform</li>
+                        <li>Your violation of these Terms of Service</li>
+                        <li>Your violation of any applicable laws or regulations</li>
+                        <li>Events you create, organize, or promote</li>
+                        <li>Content you upload, post, or transmit</li>
+                        <li>Your infringement of third-party rights</li>
+                        <li>Disputes with other users or third parties</li>
+                        <li>Your negligent or wrongful conduct</li>
+                    </ul>
+                    
+                    <h5>Scope of Indemnification</h5>
+                    <div class="info-box">
+                        <strong><i class="fas fa-umbrella me-2"></i>Coverage Includes:</strong>
+                        <ul class="mb-0">
+                            <li>Settlement amounts and judgments</li>
+                        </ul>
+                    </div>
+                    
+                    <h5>Indemnification Process</h5>
+                    <p>When seeking indemnification, EventManager will:</p>
+                    <ul class="styled-list">
+                        <li>Promptly notify you of any claims</li>
+                        <li>Provide reasonable cooperation in defense</li>
+                        <li>Allow you to control the defense and settlement</li>
+                        <li>Not settle claims without your consent</li>
+                    </ul>
+                    
+                    <h5>Limitations</h5>
+                    <p>Your indemnification obligations do not apply to claims arising from:</p>
+                    <ul class="styled-list">
+                        <li>EventManager's gross negligence or willful misconduct</li>
+                        <li>Modifications we make to your content</li>
+                        <li>Our failure to comply with applicable laws</li>
+                        <li>Breaches of our own Terms of Service</li>
+                    </ul>
+                </div>
+            </section>
+            
+            <section id="disputes">
+                <div class="section-header">
+                    <i class="fas fa-balance-scale-right me-2"></i>13. Dispute Resolution (EU Compliant)
+                </div>
+                <div class="section-content">
+                    <h5>EU Online Dispute Resolution</h5>
+                    <div class="info-box">
+                        <strong><i class="fas fa-european-union me-2"></i>EU ODR Platform:</strong>
+                        <p>EU consumers can access the European Commission's Online Dispute Resolution platform:</p>
+                        <p><strong>Website:</strong> https://ec.europa.eu/consumers/odr/</p>
+                        <p class="mb-0">This platform facilitates alternative dispute resolution for online purchases.</p>
+                    </div>
+                    
+                    <h5>Alternative Dispute Resolution</h5>
+                    <p>Before pursuing legal action, we encourage using:</p>
+                    <ul class="styled-list">
+                        <li>Direct negotiation with our customer service</li>
+                        <li>Mediation through certified EU mediators</li>
+                        <li>Consumer protection agency assistance</li>
+                        <li>Industry ombudsman services</li>
+                    </ul>
+                    
+                    <h5>Slovenian Consumer Protection</h5>
+                    <div class="warning-box">
+                        <strong>Consumer Rights in Slovenia:</strong>
+                        <ul class="mb-0">
+                            <li>Consumer Protection Act (ZVPot) applies</li>
+                            <li>Slovenian Consumer Association assistance available</li>
+                            <li>Market Inspectorate complaint procedures</li>
+                            <li>Right to legal remedies in Slovenian courts</li>
+                        </ul>
+                    </div>
+                    
+                    <h5>Mandatory Mediation</h5>
+                    <p>For disputes under €2,000, Slovenian law may require mediation before court proceedings.</p>
+                    
+                    <h5>Court Jurisdiction</h5>
+                    <p>EU consumers maintain the right to bring proceedings in:</p>
+                    <ul class="styled-list">
+                        <li>Courts of their habitual residence</li>
+                        <li>Courts of our establishment (Slovenia)</li>
+                        <li>Courts of the place where the service was provided</li>
+                    </ul>
+                </div>
+            </section>
+            
+            <section id="modifications">
+                <div class="section-header">
+                    <i class="fas fa-edit me-2"></i>14. Modifications to Service and Terms
+                </div>
+                <div class="section-content">
+                    <h5>Service Modifications</h5>
+                    <p>EventManager reserves the right to:</p>
+                    <ul class="styled-list">
+                        <li>Add, modify, or remove features at any time</li>
+                        <li>Update user interfaces and functionality</li>
+                        <li>Change pricing for premium services with notice</li>
+                        <li>Integrate or discontinue third-party services</li>
+                        <li>Implement new security measures</li>
+                        <li>Modify system requirements</li>
+                    </ul>
+                    
+                    <h5>Terms of Service Updates</h5>
+                    <div class="info-box">
+                        <strong><i class="fas fa-bell me-2"></i>Notification Process:</strong>
+                        <p>When we update these Terms, we will:</p>
+                        <ul class="mb-0">
+                            <li>Post the new terms on our website</li>
+                            <li>Send email notification to registered users</li>
+                            <li>Provide at least 30 days notice for material changes</li>
+                            <li>Update the "Last Modified" date</li>
+                            <li>Highlight significant changes when possible</li>
+                        </ul>
+                    </div>
+                    
+                    <h5>Acceptance of Changes</h5>
+                    <p>Your continued use of EventManager after changes take effect constitutes acceptance of the new terms. If you disagree with any changes:</p>
+                    <ul class="styled-list">
+                        <li>You may terminate your account before changes take effect</li>
+                        <li>Contact support to discuss concerns</li>
+                        <li>Previous terms remain in effect until the change date</li>
+                    </ul>
+                    
+                    <h5>Service Discontinuation</h5>
+                    <div class="warning-box">
+                        <strong>Service Termination:</strong> We reserve the right to discontinue EventManager with 90 days written notice.
+                    </div>
+                </div>
+            </section>
+            
+            <section id="governing">
+                <div class="section-header">
+                    <i class="fas fa-landmark me-2"></i>15. Governing Law and Jurisdiction (EU Framework)
+                </div>
+                <div class="section-content">
+                    <h5>Applicable Law</h5>
+                    <p>These Terms are governed by:</p>
+                    <ul class="styled-list">
+                        <li><strong>Primary:</strong> Laws of the Republic of Slovenia</li>
+                        <li><strong>EU Regulations:</strong> Directly applicable EU law (GDPR, Consumer Rights Directive, etc.)</li>
+                        <li><strong>Consumer Protection:</strong> EU consumer protection standards where applicable</li>
+                    </ul>
+                    
+                    <h5>Consumer Protection Override</h5>
+                    <div class="gdpr-boxx">
+                        <strong><i class="fas fa-shield-alt me-2"></i>Consumer Rights Protection:</strong>
+                        <p>If you are an EU consumer, mandatory consumer protection laws of your country of residence apply where they provide greater protection than Slovenian law.</p>
+                    </div>
+                    
+                    <h5>Jurisdiction for Different User Types</h5>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <h6>EU Consumers</h6>
+                                <ul class="mb-0">
+                                    <li>May sue in their home country courts</li>
+                                    <li>Can be sued only in their home country</li>
+                                    <li>Benefit from Rome I and Brussels I regulations</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="warning-box">
+                                <h6>Business Users</h6>
+                                <ul class="mb-0">
+                                    <li>Slovenian courts have jurisdiction</li>
+                                    <li>Ljubljana District Court for commercial disputes</li>
+                                    <li>Higher Court of Ljubljana for appeals</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h5>Regulatory Compliance Framework</h5>
+                    <ul class="styled-list">
+                        <li><strong>GDPR:</strong> EU General Data Protection Regulation 2016/679</li>
+                        <li><strong>ePrivacy:</strong> Directive 2002/58/EC (as amended)</li>
+                        <li><strong>Consumer Rights:</strong> Directive 2011/83/EU</li>
+                        <li><strong>Digital Services Act:</strong> EU Regulation 2022/2065</li>
+                        <li><strong>Platform-to-Business:</strong> Regulation 2019/1150</li>
+                        <li><strong>Slovenian Implementation:</strong> National laws implementing EU directives</li>
+                    </ul>
+                    
+                    <h5>Language and Translation</h5>
+                    <div class="info-box">
+                        <strong>Multilingual Terms:</strong>
+                        <p>These Terms are available in English and Slovenian. In case of conflicts between versions, the Slovenian version prevails for Slovenian users, while EU consumer protection standards apply regardless of language version.</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="miscellaneous">
+                <div class="section-header">
+                    <i class="fas fa-list-ul me-2"></i>16. Miscellaneous Provisions
+                </div>
+                <div class="section-content">
+                    <h5>Entire Agreement</h5>
+                    <p>These Terms of Service, together with our Privacy Policy and any additional terms for specific features, constitute the entire agreement between you and EventManager regarding your use of our service.</p>
+                    
+                    <h5>Severability</h5>
+                    <p>If any provision of these Terms is found to be unenforceable or invalid, the remaining provisions will continue in full force and effect. The unenforceable provision will be replaced with an enforceable provision that most closely reflects the original intent.</p>
+                    
+                    <h5>Waiver</h5>
+                    <p>Our failure to enforce any provision of these Terms does not constitute a waiver of that provision or any other provision. Any waiver must be in writing and signed by an authorized representative.</p>
+                    
+                    <h5>Assignment</h5>
+                    <div class="info-box">
+                        <strong>Transfer Rights:</strong>
+                        <ul class="mb-0">
+                            <li>You may not assign or transfer your rights under these Terms</li>
+                            <li>EventManager may assign these Terms in connection with mergers, acquisitions, or asset sales</li>
+                            <li>These Terms bind successors and permitted assigns</li>
+                        </ul>
+                    </div>
+                    
+                    <h5>Survival</h5>
+                    <p>The following provisions survive termination of these Terms:</p>
+                    <ul class="styled-list">
+                        <li>Intellectual property rights</li>
+                        <li>Limitation of liability</li>
+                        <li>Indemnification obligations</li>
+                        <li>Dispute resolution procedures</li>
+                        <li>Governing law and jurisdiction</li>
+                    </ul>
+                    
+                    <h5>Electronic Communications</h5>
+                    <p>By using EventManager, you consent to receive communications from us electronically. We may communicate with you by email or by posting notices on our website. You agree that all agreements, notices, disclosures, and other communications that we provide electronically satisfy any legal requirement that such communications be in writing.</p>
+                    
+                    <h5>Third-Party Beneficiaries</h5>
+                    <div class="warning-box">
+                        <strong>No Third-Party Rights:</strong> These Terms do not create any third-party beneficiary rights except as expressly stated herein.
+                    </div>
+                    
+                    <h5>Headings and References</h5>
+                    <p>Section headings are for convenience only and do not affect interpretation. References to "including" or "such as" are not limiting and mean "including without limitation."</p>
+                </div>
+            </section>
+            
+            <section id="contact">
+                <div class="section-header">
+                    <i class="fas fa-envelope me-2"></i>17. Contact Information and Support
+                </div>
+                <div class="section-content">
+                    <h5>Customer Support</h5>
+                    <p>For questions, concerns, or support regarding these Terms of Service or EventManager in general, please contact us through the following channels:</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-box">
+                                <h6><i class="fas fa-headset me-2"></i>General Support</h6>
+                                <p><strong>Email:</strong> lifeeventmanager666@gmail.com</p>
+                                <p><strong>Response Time:</strong> Within 7 days</p>
+                                <p class="mb-0"><strong>Languages:</strong> English, Slovenian</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="warning-box">
+                                <h6><i class="fas fa-exclamation-triangle me-2"></i>Urgent Issues</h6>
+                                <p><strong>Email:</strong> 6mrnight9@gmail.com</p>
+                                <p><strong>Response Time:</strong> Within 4 hours</p>
+                                <p><strong>For:</strong> Security breaches, payment issues</p>
+                                <p class="mb-0"><strong>Availability:</strong> 24/7 monitoring</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h5>Legal and Compliance</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="definition-box">
+                                <h6><i class="fas fa-balance-scale me-2"></i>Legal Inquiries</h6>
+                                <p><strong>Email:</strong> lifeeventmanager666@gmail.com</p>
+                                <p class="mb-0"><strong>For:</strong> Terms questions, legal notices</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="definition-box">
+                                <h6><i class="fas fa-user-shield me-2"></i>Privacy and Data</h6>
+                                <p><strong>Email:</strong> lifeeventmanager666@gmail.com</p>
+                                <p class="mb-0"><strong>For:</strong> GDPR requests, privacy concerns</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h5>Business and Partnerships</h5>
+                    <ul class="styled-list">
+                        <li><strong>Business Development:</strong> 6mrngiht9@gmail.com</li>
+                        <li><strong>Press and Media:</strong> 6mrngiht9@gmail.com</li>
+                        <li><strong>Investor Relations:</strong> 6mrngiht9@gmail.com</li>
+                    </ul>
+                    
+                    <h5>Reporting Violations</h5>
+                    <div class="highlight-box">
+                        <h6><i class="fas fa-flag me-2"></i>Report Issues</h6>
+                        <p><strong>Official mail:</strong> lifeeventmanager666@gmail.com</p>
+                    </div>
+                </div>
+            </section>
+            
+            <div class="highlight-box">
+                <h4><i class="fas fa-check-circle me-2"></i>Acknowledgment</h4>
+                <p class="mb-0">By continuing to use EventManager, you acknowledge that you have read these Terms of Service in their entirety, understand their contents, and agree to be bound by all provisions herein. These terms represent a legally binding contract between you and EventManager.</p>
+            </div>
+        </div>
+    </div>
+{% endblock %}

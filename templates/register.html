@@ -23,13 +23,13 @@
                 </ul>
             </div>
         {% endif %}
-    {% endwith %}
-        <form method="POST" action="/register">
+        {% endwith %}
+        <form method="POST" action="/register" onsubmit="return validateCheckboxes()">
             <div class="mb-3">
                 <label for="username" class="form-label">Username:</label>
                 <input type="text" name="username" id="username" class="form-control" required>
             </div>
-            
+
             <div class="mb-3">
                 <label for="email" class="form-label">Email:</label>
                 <input type="email" name="email" id="email" class="form-control" required>
@@ -50,6 +50,20 @@
                 <input type="checkbox" id="show_password" class="form-check-input" onclick="togglePasswordVisibility()">
             </div>
 
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="terms" name="terms">
+                <label class="form-check-label" for="terms">
+                    I agree to the <a href="/terms-of-service" target="_blank">Terms of Service</a>
+                </label>
+            </div>
+
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="privacy" name="privacy">
+                <label class="form-check-label" for="privacy">
+                    I agree to the <a href="/privacy-policy" target="_blank">Privacy Policy</a>
+                </label>
+            </div>
+
             <button type="submit" class="btn btn-primary">Register</button>
         </form>
 
@@ -60,13 +74,20 @@
         function togglePasswordVisibility() {
             var passwordField = document.getElementById("password");
             var confirmPasswordField = document.getElementById("confirm_password");
-            if (document.getElementById("show_password").checked) {
-                passwordField.type = "text";
-                confirmPasswordField.type = "text";
-            } else {
-                passwordField.type = "password";
-                confirmPasswordField.type = "password";
+            var showPasswordCheckbox = document.getElementById("show_password");
+            var type = showPasswordCheckbox.checked ? "text" : "password";
+            passwordField.type = type;
+            confirmPasswordField.type = type;
+        }
+
+        function validateCheckboxes() {
+            var termsChecked = document.getElementById("terms").checked;
+            var privacyChecked = document.getElementById("privacy").checked;
+            if (!termsChecked || !privacyChecked) {
+                alert("You must agree to both the Terms of Service and Privacy Policy to register.");
+                return false;
             }
+            return true;
         }
     </script>
 {% endblock %}

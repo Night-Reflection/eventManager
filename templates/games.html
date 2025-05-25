@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show mt-3" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
+    <h2>Video Games</h2>
+    <form method="get" class="form-inline my-2">
+        <input type="text" name="search" class="form-control" placeholder="Search for games..." value="{{ search_query }}">
+        <div class="form-check ml-2">
+            <input class="form-check-input" type="checkbox" name="on_sale" value="1" id="onSaleCheck" {% if on_sale %}checked{% endif %}>
+            <label class="form-check-label" for="onSaleCheck">
+                On Sale Only
+            </label>
+        </div>
+        <button type="submit" class="btn btn-primary ml-2">Search</button>
+    </form>
+    {% if wishlisted_games and page == 1 and not search_query %}
+    <div class="container mb-4">
+        <h4>Your Wishlisted Games</h4>
+        <div class="row">
+            {% for game in wishlisted_games %}
+            <div class="col-md-3 mb-3">
+                <div class="card h-100 shadow border-primary">
+                    <img src="{{ game.thumb }}" alt="{{ game.title }}" class="card-img-top" style="height:150px;object-fit:cover;">
+                    <div class="card-body text-center">
+                        <h6 class="card-title">{{ game.title }}</h6>
+                        <p>Price:
+                            {% if game.price and game.price != "N/A" %}
+                                <span class="text-success">${{ game.price }}</span>
+                            {% else %}
+                                <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </p>
+                        <form method="post" action="{{ url_for('unwishlist_game', cheapshark_id=game.cheapshark_id, **request.args) }}">
+                            <button type="submit" class="btn btn-outline-danger btn-block btn-sm">
+                                <i class="fas fa-heart-broken"></i> Remove from Wishlist
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    <div class="row mt-3">
+        {% for game in games_list %}
+        <div class="col-md-3 mb-4">
+            <div class="card h-100 shadow-sm">
+                <img src="{{ game.thumb or game['thumb'] }}"
+                     class="card-img-top game-detail"
+                     data-id="{{ game.gameID or game['gameID'] }}"
+                     alt="{{ game.external or game['external'] or game.title or game['title'] }}"
+                     style="height:180px; object-fit:cover; cursor:pointer;" />
+                <div class="card-body text-center">
+                    <h5 class="card-title game-detail"
+                        data-id="{{ game.gameID or game['gameID'] }}"
+                        style="cursor:pointer;">
+                        {{ game.external or game['external'] or game.title or game['title'] }}
+                    </h5>
+                    <p>
+                        {% if game.salePrice or game['salePrice'] %}
+                            Price: <span class="text-success">${{ game.salePrice or game['salePrice'] }}</span>
+                            {% if (game.normalPrice or game['normalPrice']) and (game.salePrice or game['salePrice']) != (game.normalPrice or game['normalPrice']) %}
+                                <span class="text-muted"><del>${{ game.normalPrice or game['normalPrice'] }}</del></span>
+                            {% endif %}
+                        {% elif game.cheapest or game['cheapest'] %}
+                            Price: ${{ game.cheapest or game['cheapest'] }}
+                        {% else %}
+                            Price: <span class="text-muted">N/A</span>
+                        {% endif %}
+                    </p>
+                    {% set cheapshark_id = game.gameID or game['gameID'] %}
+                    {% if cheapshark_id in wishlisted_ids %}
+                        <form method="post" action="{{ url_for('unwishlist_game', cheapshark_id=cheapshark_id, **request.args) }}">
+                            <button type="submit" class="btn btn-outline-danger btn-block" style="margin-top: 8px;">
+                                <i class="fas fa-heart-broken"></i> Remove from Wishlist
+                            </button>
+                        </form>
+                    {% else %}
+                        <form method="post">
+                            <input type="hidden" name="game_id" value="{{ cheapshark_id }}">
+                            <input type="hidden" name="game_title" value="{{ game.external or game['external'] or game.title or game['title'] }}">
+                            <input type="hidden" name="game_thumb" value="{{ game.thumb or game['thumb'] }}">
+                            <input type="hidden" name="game_price" value="{{ game.salePrice or game['salePrice'] or game.cheapest or game['cheapest'] }}">
+                            <button type="submit" class="btn btn-outline-success btn-block" style="margin-top: 8px;">
+                                <i class="fas fa-plus-circle"></i> Add to Wishlist
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <nav>
+      <ul class="pagination justify-content-center">
+        {% if has_prev %}
+          <li class="page-item">
+            <a class="page-link" href="{{ url_for('games', page=page-1, search=search_query, on_sale=on_sale|int) }}">Previous</a>
+          </li>
+        {% endif %}
+        <li class="page-item disabled">
+          <a class="page-link" href="#">Page {{ page }}</a>
+        </li>
+        {% if has_next %}
+          <li class="page-item">
+            <a class="page-link" href="{{ url_for('games', page=page+1, search=search_query, on_sale=on_sale|int) }}">Next</a>
+          </li>
+        {% endif %}
+      </ul>
+    </nav>
+</div>
+<div class="modal fade" id="gameDetailsModal" tabindex="-1" aria-labelledby="gameDetailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="gameDetailsModalLabel">Game Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="game-details-content">
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+$(document).on('click', '.game-detail', function() {
+    var gameId = $(this).data('id');
+    if (!gameId) return;
+    $('#game-details-content').html("Loading...");
+    var modal = new bootstrap.Modal(document.getElementById('gameDetailsModal'));
+    modal.show();
+    $.get("/games/details/" + gameId, function(data) {
+        if(data.error) {
+            $('#game-details-content').html("<div class='alert alert-danger'>Game details not found.</div>");
+            return;
+        }
+        let info = data.info || {};
+        let deals = data.deals || [];
+        let html = `
+            <h4>${info.title || "Game Details"}</h4>
+            <img src="${info.thumb || ''}" style="max-width:120px;" class="mb-2"/>
+            <p><b>Cheapest Ever:</b> $${info.cheapestPriceEver ? info.cheapestPriceEver.price : "N/A"}</p>
+            <p><b>Steam AppID:</b> ${info.steamAppID || "N/A"}</p>
+            <p><b>Current Deals:</b></p>
+            <ul>
+        `;
+        for(const deal of deals) {
+            html += `<li>
+                <b>Store ID:</b> ${deal.storeID} - 
+                <b>Price:</b> $${deal.price} 
+                <a href="https://www.cheapshark.com/redirect?dealID=${deal.dealID}" target="_blank" class="btn btn-sm btn-info ml-2">View Deal</a>
+            </li>`;
+        }
+        html += "</ul>";
+        $('#game-details-content').html(html);
+    });
+});
+</script>
+{% endblock %}

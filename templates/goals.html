@@ -22,7 +22,7 @@
     <div class="card card-body mb-4">
         <form method="POST" class="row g-3">
             <div class="col-md-4">
-                <label class="form-label">Platform</label>
+                <label class="form-label" style="color: black;">Platform</label>
                 <select name="platform" class="form-select" id="platformSelect" onchange="toggleFields()" required>
                     <option value="faceit">FACEIT</option>
                     <option value="youtube">YouTube</option>
@@ -32,11 +32,11 @@
 
             <div class="col-md-8 row g-3" id="faceitFields">
                 <div class="col-md-4">
-                    <label class="form-label">FACEIT Nickname</label>
+                    <label class="form-label" style="color: black;">FACEIT Nickname</label>
                     <input type="text" name="nickname" class="form-control" required>
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label">Game</label>
+                    <label class="form-label" style="color: black;">Game</label>
                     <select name="game" class="form-select" required>
                         {% for key, name in faceit_games.items() %}
                             <option value="{{ key }}">{{ name }}</option>
@@ -44,33 +44,33 @@
                     </select>
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label">Goal ELO</label>
+                    <label class="form-label" style="color: black;">Goal ELO</label>
                     <input type="number" name="goal_elo" class="form-control" required>
                 </div>
             </div>
 
             <div class="col-md-8 row g-3" id="youtubeFields" style="display: none;">
                 <div class="col-md-6">
-                    <label class="form-label">YouTube Handle or Channel ID</label>
+                    <label class="form-label" style="color: black;">YouTube Handle or Channel ID</label>
                     <input type="text" name="channel_id" class="form-control" placeholder="@YourHandle or Channel ID" required>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Goal Subscribers</label>
+                    <label class="form-label" style="color: black;">Goal Subscribers</label>
                     <input type="number" name="goal_subs" class="form-control" placeholder="e.g., 1000" required>
                 </div>
             </div>
             
             <div class="col-md-8 row g-3" id="customFields" style="display: none;">
                 <div class="col-md-4">
-                    <label class="form-label">Goal Name</label>
+                    <label class="form-label" style="color: black;">Goal Name</label>
                     <input type="text" name="custom_name" class="form-control" placeholder="e.g., Instagram Followers" required>
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label">Current Value</label>
+                    <label class="form-label" style="color: black;">Current Value</label>
                     <input type="number" name="current_value" class="form-control" required>
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label">Goal Value</label>
+                    <label class="form-label" style="color: black;">Goal Value</label>
                     <input type="number" name="goal_value" class="form-control" required>
                 </div>
             </div>

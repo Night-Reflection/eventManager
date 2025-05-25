@@ -5,12 +5,47 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from mailjet_rest import Client
 from dotenv import load_dotenv
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import requests
 from zoneinfo import ZoneInfo
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.date import DateTrigger
+from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+import logging
+from logging.handlers import RotatingFileHandler
+import math
 
 load_dotenv()
+
+log_file = "logs.txt"
+local_tz = ZoneInfo("Europe/Ljubljana")
+
+def parse_event_datetime(event_date, event_time):
+    try:
+        return datetime.strptime(f"{event_date} {event_time}", "%Y-%m-%d %H:%M:%S").replace(tzinfo=local_tz)
+    except ValueError:
+        return datetime.strptime(f"{event_date} {event_time}", "%Y-%m-%d %H:%M").replace(tzinfo=local_tz)
+
+def custom_time(secs):
+    utc_dt = datetime.fromtimestamp(secs, tz=timezone.utc)
+    local_dt = utc_dt.astimezone(local_tz)
+    return local_dt.timetuple()
+
+formatter = logging.Formatter(
+    fmt="%(asctime)s %(levelname)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+formatter.converter = custom_time
+file_handler = RotatingFileHandler(log_file, maxBytes=5 * 1024 * 1024, backupCount=3)
+stream_handler = logging.StreamHandler()
+
+file_handler.setFormatter(formatter)
+stream_handler.setFormatter(formatter)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+logger.addHandler(file_handler)
+logger.addHandler(stream_handler)
+logger.info("Logger initialized")
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY")
@@ -18,6 +53,13 @@ app.secret_key = os.getenv("SECRET_KEY")
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
+
+jobstore_url = os.getenv("JOBSTORE_DATABASE_URI", "sqlite:///jobs.db")
+scheduler = BackgroundScheduler(
+    jobstores={"default": SQLAlchemyJobStore(url=jobstore_url)},
+    job_defaults={"max_instances": 1},
+    timezone=local_tz
+)
 
 def update_elo_job():
     with app.app_context():
@@ -33,20 +75,107 @@ def update_elo_job():
                         new_elo = data.get('games', {}).get(goal.game, {}).get('faceit_elo')
 
                         if new_elo and new_elo != goal.current_elo:
-                            print(f"[{datetime.now()}] Updating {goal.nickname} ({goal.game}) from {goal.current_elo} ➝ {new_elo}")
+                            logger.info(f"Updating {goal.nickname} ({goal.game}) from {goal.current_elo} ➝ {new_elo}")
                             goal.current_elo = new_elo
                             db.session.commit()
                 elif goal.platform == 'youtube':
                     current_subs = get_youtube_subscribers(goal.nickname)
                     if current_subs is not None and current_subs != goal.current_elo:
-                        print(f"[{datetime.now()}] Updating YouTube channel {goal.nickname} from {goal.current_elo} ➝ {current_subs}")
+                        logger.info(f"Updating YouTube channel {goal.nickname} from {goal.current_elo} ➝ {current_subs}")
                         goal.current_elo = current_subs
                         db.session.commit()
             except Exception as e:
-                print(f"[ERROR] Failed to update {goal.nickname}: {e}")
+                logger.error(f"Failed to update {goal.nickname}: {e}")
 
 scheduler = BackgroundScheduler()
-scheduler.add_job(update_elo_job, trigger='interval', minutes=10)
+scheduler.add_job(
+    update_elo_job,
+    trigger='interval',
+    minutes=15,
+    id="update_elo_job",
+    replace_existing=True
+)
+
+def check_games_on_sale():
+    with app.app_context():
+        users = User.query.all()
+        for user in users:
+            games_on_sale = []
+            for wish in user.wishlisted_games:
+                game = wish.game
+                deals_resp = requests.get(f"{CHEAPSHARK_API_BASE}/games", params={"id": game.cheapshark_id})
+                if deals_resp.status_code == 200:
+                    deals = deals_resp.json().get("deals", [])
+                    if deals:
+                        best_deal = min(deals, key=lambda d: float(d.get("price", 9999)))
+                        if float(best_deal["price"]) < (wish.last_notified_price or float('inf')):
+                            games_on_sale.append({
+                                "title": game.name,
+                                "store": best_deal["storeID"],
+                                "price": best_deal["price"],
+                                "url": f"https://www.cheapshark.com/redirect?dealID={best_deal['dealID']}"
+                            })
+                            wish.last_notified_price = float(best_deal["price"])
+                            db.session.commit()
+            if games_on_sale:
+                game_lines = "".join(
+                    f"<li><a href='{g['url']}'>{g['title']}</a> now <b>${g['price']}</b></li>" for g in games_on_sale
+                )
+                email_body = f"""
+                <html>
+                <body style="font-family: Arial, sans-serif; background-color:#f7f7f7; padding: 20px;">
+                <div style="max-width: 500px; margin: 0 auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.07); overflow: hidden;">
+                    <div style="background: linear-gradient(90deg, #4e54c8 0%, #8f94fb 100%); color: #fff; text-align: center; padding: 24px 0;">
+                    <h2 style="margin:0 0 8px;">🎮 Game Sale Alert!</h2>
+                    <p style="margin:0; font-size:16px;">Some of your wishlisted games are now on sale!</p>
+                    </div>
+                    <div style="padding: 24px;">
+                    <ul style="list-style:none; padding:0; margin:0;">
+                        {''.join(f"""
+                        <li style='margin-bottom: 18px; border-bottom:1px solid #eee; padding-bottom:12px;'>
+                        <a href='{g['url']}' style='text-decoration:none; color:#222; font-weight:bold; font-size:17px;'>{g['title']}</a><br>
+                        <span style='color:#4e54c8; font-size:16px;'><b>Now: ${g['price']}</b></span>
+                        <br>
+                        <a href='{g['url']}' style='display:inline-block; margin-top:6px; background:#4e54c8; color:#fff; padding:7px 16px; border-radius:6px; text-decoration:none; font-size:15px;'>View Deal</a>
+                        </li>
+                        """ for g in games_on_sale)}
+                    </ul>
+                    <p style="font-size: 13px; color: #888; margin-top: 20px;">You are receiving this notification because you wishlisted these games on EventManager.</p>
+                    <div style="text-align:center; margin-top: 10px;">
+                        <img src="https://cdn-icons-png.flaticon.com/512/833/833314.png" style="width:50px; opacity:0.5;" alt="Game controller">
+                    </div>
+                    </div>
+                    <div style="background:#f7f7f7; color:#aaa; text-align:center; font-size:12px; padding:12px;">
+                    &copy; EventManager | Happy gaming!
+                    </div>
+                </div>
+                </body>
+                </html>
+                """
+                data = {
+                    'Messages': [
+                        {
+                            "From": {"Email": "lifeeventmanager666@gmail.com", "Name": "EventManager"},
+                            "To": [{"Email": user.email}],
+                            "Subject": "Game Sale Alert! 🎮",
+                            "HTMLPart": email_body,
+                        }
+                    ]
+                }
+                try:
+                    mailjet.send.create(data=data)
+                    logger.info(f"Sale notification sent to {user.email}")
+                except Exception as e:
+                    logger.error(f"Failed to send sale email to {user.email}: {e}")
+
+scheduler.add_job(
+    check_games_on_sale,
+    trigger="interval",
+    hours=1,
+    id="check_games_on_sale",
+    replace_existing=True,
+)
+
 scheduler.start()
 
 mailjet = Client(auth=(os.getenv('MAILJET_API_KEY'), os.getenv('MAILJET_API_SECRET')), version='v3.1')
@@ -54,6 +183,9 @@ PANDASCORE_API_KEY = os.getenv("E_SPORTS_API_KEY")
 SPORTS_API_KEY = os.getenv("SPORTS_API_KEY")
 FACEIT_API_KEY = os.getenv("FACEIT_API")
 FACEIT_API_URL = "https://open.faceit.com/data/v4"
+LEMON_API_KEY = os.getenv("LEMON_SQUEEZY_API")
+LEMON_VARIANT_ID = os.getenv("LEMON_VARIANT_ID")
+CHEAPSHARK_API_BASE = "https://www.cheapshark.com/api/1.0"
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -72,6 +204,8 @@ class Event(db.Model):
     description = db.Column(db.String(255), nullable=True)
     location = db.Column(db.String(255), nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    notification_enabled = db.Column(db.Boolean, default=False)
+    reminder_time = db.Column(db.Integer, nullable=True)
 
     user = db.relationship('User', backref=db.backref('events', lazy=True))
 
@@ -111,7 +245,7 @@ class Goal(db.Model):
     goal_elo = db.Column(db.Integer)
     platform = db.Column(db.String(20))
     custom_name = db.Column(db.String(100), nullable=True)
-    last_updated = db.Column(db.DateTime, default=datetime.now)
+    last_updated = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     user = db.relationship('User', backref=db.backref('goals', lazy=True))
@@ -121,105 +255,169 @@ class Goal(db.Model):
             return 0
         return min(100, int((self.current_elo / self.goal_elo) * 100))
 
+class Game(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    cheapshark_id = db.Column(db.String(50), unique=True, nullable=False)
+    name = db.Column(db.String(200), nullable=False)
+    thumb = db.Column(db.String(300))
+    cheapest_price = db.Column(db.Float)
+
+class WishlistedGame(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    game_id = db.Column(db.Integer, db.ForeignKey('game.id'), nullable=False)
+    last_notified_price = db.Column(db.Float, nullable=True)
+
+    user = db.relationship('User', backref=db.backref('wishlisted_games', lazy=True))
+    game = db.relationship('Game', backref=db.backref('wishlists', lazy=True))
 
 def create_tables():
     with app.app_context():
         db.create_all()
-    print("Databases created")
+    logger.info("Databases created")
 
 create_tables()
+
+def schedule_notification(event, reminder_minutes):
+    user = User.query.get(event.user_id)
+    user_tz = ZoneInfo(user.timezone or 'UTC')
+
+    local_event_dt = datetime.strptime(f"{event.date} {event.time}", '%Y-%m-%d %H:%M:%S')
+    local_event_dt = local_event_dt.replace(tzinfo=user_tz)
+
+    reminder_time_utc = (local_event_dt - timedelta(minutes=reminder_minutes)).astimezone(ZoneInfo("UTC"))
+
+    def send_notification_email():
+        with app.app_context():
+            refreshed_event = Event.query.get(event.id)
+            if not refreshed_event:
+                logger.error(f"Event with ID {event.id} not found in the database.")
+                return
+
+            user = refreshed_event.user
+            event_time_local = local_event_dt
+
+            email_body = f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; color: #333; background-color: #f9f9f9; padding: 20px;">
+                <div style="background-color: white; border-radius: 8px; padding: 20px; box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);">
+                    <h2 style="color: #4CAF50; text-align: center;">Event Reminder</h2>
+                    <p style="font-size: 16px;">Dear {user.username},</p>
+                    <p style="font-size: 16px;">This is a friendly reminder for your upcoming event:</p>
+                    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                        <tr><td style="padding: 8px; font-weight: bold;">Event:</td><td style="padding: 8px;">{refreshed_event.title}</td></tr>
+                        <tr><td style="padding: 8px; font-weight: bold;">Date:</td><td style="padding: 8px;">{event_time_local.strftime('%Y-%m-%d')}</td></tr>
+                        <tr><td style="padding: 8px; font-weight: bold;">Time:</td><td style="padding: 8px;">{event_time_local.strftime('%H:%M')}</td></tr>
+                        <tr><td style="padding: 8px; font-weight: bold;">Location:</td><td style="padding: 8px;">{refreshed_event.location}</td></tr>
+                        <tr><td style="padding: 8px; font-weight: bold;">Description:</td><td style="padding: 8px;">{refreshed_event.description}</td></tr>
+                    </table>
+                    <p style="font-size: 16px;">Thank you for using EventManager!</p>
+                    <footer style="text-align: center; font-size: 14px; color: #aaa;">
+                        Best regards,<br>
+                        The EventManager Team
+                    </footer>
+                </div>
+            </body>
+            </html>
+            """
+
+            data = {
+                'Messages': [
+                    {
+                        "From": {"Email": "lifeeventmanager666@gmail.com", "Name": "EventManager"},
+                        "To": [{"Email": refreshed_event.user.email}],
+                        "Subject": f"Reminder: {refreshed_event.title}",
+                        "HTMLPart": email_body
+                    }
+                ]
+            }
+            try:
+                result = mailjet.send.create(data=data)
+                logger.info(f"Mailjet Response: {result.status_code}, {result.json()}")
+            except Exception as e:
+                logger.error(f"Failed to send email for event ID {event.id}: {e}")
+
+    trigger = DateTrigger(run_date=reminder_time_utc)
+    scheduler.add_job(send_notification_email, trigger=trigger)
+    logger.info(f"Scheduled notification for event '{event.title}' at {reminder_time_utc} UTC")
+
+@app.route("/get_timezone_status")
+def get_timezone_status():
+    if 'user_id' in session:
+        user = User.query.get(session['user_id'])
+        return jsonify({"timezone_set": bool(user.timezone)})
+    return jsonify({"timezone_set": False})
+    
+@app.route("/set_timezone", methods=["POST"])
+def set_timezone():
+    print("hello")
+    logger.info(f"Headers: {request.headers}")
+    logger.info(f"Raw data: {request.data}")
+    logger.info(f"JSON: {request.get_json()}")
+    
+    if 'user_id' in session:
+        user = User.query.get(session['user_id'])
+        user_timezone = request.json.get("timezone")
+        logger.info(f"Received timezone in POST: {user_timezone}")
+        if user_timezone:
+            user.timezone = user_timezone
+            db.session.commit()
+            return jsonify({"status": "success"}), 200
+    return jsonify({"status": "failed"}), 400
+
+@app.route('/terms-of-service')
+def terms_of_service():
+    return render_template('terms_of_service.html')
+
+@app.route('/privacy-policy')
+def privacy_policy():
+    return render_template('privacy_policy.html')
 
 @app.route("/")
 def home():
     session.pop('verification_code', None)
+
     if 'user_id' in session:
         user = User.query.get(session['user_id'])
 
         if not user.timezone:
-            user_timezone = request.headers.get('X-Timezone')
-            if user_timezone:
-                user.timezone = user_timezone
-                db.session.commit()
+            print("hello")
+            return render_template("home.html", user=user)
 
-        if user.timezone:
-            user_tz = ZoneInfo(user.timezone)
-            headers = {'Authorization': f'Bearer {PANDASCORE_API_KEY}'}
-            now = datetime.now(tz=ZoneInfo("UTC"))
-            now_iso = now.isoformat()
-            end_iso = (now + timedelta(days=365)).isoformat()
+        user_tz = ZoneInfo(user.timezone)
+        headers = {'Authorization': f'Bearer {PANDASCORE_API_KEY}'}
+        now = datetime.now(tz=ZoneInfo("UTC"))
+        now_iso = now.isoformat()
+        end_iso = (now + timedelta(days=365)).isoformat()
 
-            follows = FollowedTeam.query.filter_by(user_id=user.id).all()
-            for follow in follows:
-                external_team_id = follow.team.external_id
-                m_resp = requests.get(
-                    f'https://api.pandascore.co/teams/{external_team_id}/matches',
-                    headers=headers,
-                    params={'range[begin_at]': f'{now_iso},{end_iso}'}
-                )
-                if m_resp.status_code != 200:
-                    continue
-                try:
-                    matches = m_resp.json()
-                except ValueError:
-                    continue
-                for match in matches:
-                    begin = match.get('begin_at')
-                    if begin:
-                        match_time_utc = datetime.fromisoformat(begin.replace('Z', '+00:00'))
-                        match_time_local = match_time_utc.astimezone(user_tz)
-                        if match_time_local > now.astimezone(user_tz):
-                            opps = match.get('opponents', [])
-                            if len(opps) == 2:
-                                t1 = opps[0]['opponent']['name']
-                                t2 = opps[1]['opponent']['name']
-                                title = f"{t1} vs {t2}"
-                                date = match_time_local.strftime('%Y-%m-%d')
-                                time = match_time_local.strftime('%H:%M')
-                                location = match.get('videogame', {}).get('name', 'Unknown')
-                                exists = Event.query.filter_by(
-                                    user_id=user.id,
-                                    title=title,
-                                    date=date,
-                                    time=time
-                                ).first()
-                                if not exists:
-                                    ev = Event(
-                                        title=title,
-                                        date=date,
-                                        time=time,
-                                        description=title,
-                                        location=location,
-                                        user_id=user.id
-                                    )
-                                    db.session.add(ev)
-
-            followed_sports = FollowedSportsTeam.query.filter_by(user_id=user.id).all()
-            for followed in followed_sports:
-                sports_team = followed.team
-                matches_resp = requests.get(f'https://www.thesportsdb.com/api/v1/json/{SPORTS_API_KEY}/searchevents.php?e={sports_team.name}')
-                if matches_resp.status_code != 200:
-                    continue
-                try:
-                    matches = matches_resp.json().get('event', [])
-                except Exception:
-                    matches = []
-                if not matches:
-                    continue
-                filtered_matches = [
-                    match for match in matches
-                    if match.get('strHomeTeam') == sports_team.name or match.get('strAwayTeam') == sports_team.name
-                ]
-                for match in filtered_matches:
-                    event_date = match.get('dateEvent')
-                    event_time = match.get('strTime')
-                    if event_date and event_time:
-                        match_time_utc = datetime.strptime(f"{event_date} {event_time}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=ZoneInfo("UTC"))
-                        match_time_local = match_time_utc.astimezone(user_tz)
-                        if match_time_local > datetime.now(tz=user_tz):
-                            title = match.get('strEvent', 'Unknown Match')
-                            location = match.get('strVenue', 'Unknown Venue')
+        follows = FollowedTeam.query.filter_by(user_id=user.id).all()
+        for follow in follows:
+            external_team_id = follow.team.external_id
+            m_resp = requests.get(
+                f'https://api.pandascore.co/teams/{external_team_id}/matches',
+                headers=headers,
+                params={'range[begin_at]': f'{now_iso},{end_iso}'}
+            )
+            if m_resp.status_code != 200:
+                continue
+            try:
+                matches = m_resp.json()
+            except ValueError:
+                continue
+            for match in matches:
+                begin = match.get('begin_at')
+                if begin:
+                    match_time_utc = datetime.fromisoformat(begin.replace('Z', '+00:00'))
+                    match_time_local = match_time_utc.astimezone(user_tz)
+                    if match_time_local > now.astimezone(user_tz):
+                        opps = match.get('opponents', [])
+                        if len(opps) == 2:
+                            t1 = opps[0]['opponent']['name']
+                            t2 = opps[1]['opponent']['name']
+                            title = f"{t1} vs {t2}"
                             date = match_time_local.strftime('%Y-%m-%d')
                             time = match_time_local.strftime('%H:%M')
+                            location = match.get('videogame', {}).get('name', 'Unknown')
                             exists = Event.query.filter_by(
                                 user_id=user.id,
                                 title=title,
@@ -233,14 +431,61 @@ def home():
                                     time=time,
                                     description=title,
                                     location=location,
-                                    user_id=user.id
+                                    user_id=user.id,
+                                    notification_enabled=False,
+                                    reminder_time=None
                                 )
                                 db.session.add(ev)
 
-            db.session.commit()
+        followed_sports = FollowedSportsTeam.query.filter_by(user_id=user.id).all()
+        for followed in followed_sports:
+            sports_team = followed.team
+            matches_resp = requests.get(f'https://www.thesportsdb.com/api/v1/json/{SPORTS_API_KEY}/searchevents.php?e={sports_team.name}')
+            if matches_resp.status_code != 200:
+                continue
+            try:
+                matches = matches_resp.json().get('event', [])
+            except Exception:
+                matches = []
+            if not matches:
+                continue
+            filtered_matches = [
+                match for match in matches
+                if match.get('strHomeTeam') == sports_team.name or match.get('strAwayTeam') == sports_team.name
+            ]
+            for match in filtered_matches:
+                event_date = match.get('dateEvent')
+                event_time = match.get('strTime')
+                if event_date and event_time:
+                    match_time_utc = datetime.strptime(f"{event_date} {event_time}", '%Y-%m-%d %H:%M:%S').replace(tzinfo=ZoneInfo("UTC"))
+                    match_time_local = match_time_utc.astimezone(user_tz)
+                    if match_time_local > datetime.now(tz=user_tz):
+                        title = match.get('strEvent', 'Unknown Match')
+                        location = match.get('strVenue', 'Unknown Venue')
+                        date = match_time_local.strftime('%Y-%m-%d')
+                        time = match_time_local.strftime('%H:%M')
+                        exists = Event.query.filter_by(
+                            user_id=user.id,
+                            title=title,
+                            date=date,
+                            time=time
+                        ).first()
+                        if not exists:
+                            ev = Event(
+                                title=title,
+                                date=date,
+                                time=time,
+                                description=title,
+                                location=location,
+                                user_id=user.id
+                            )
+                            db.session.add(ev)
 
+        db.session.commit()
         return render_template("home.html", user=user)
+
     return redirect(url_for('login'))
+
 
 @app.route("/login", methods=['GET', 'POST'])
 def login():
@@ -373,11 +618,19 @@ def send_verification_email(email, verification_code):
         }
         result = mailjet.send.create(data=data)
     except Exception as e:
-        print(f"Error sending email: {e}")
+        logger.error(f"Error sending email: {e}")
 
 @app.route('/events', methods=['GET'])
 def events():
-    today = datetime.today()
+    if 'user_id' not in session:
+        flash("Please log in to access this page.", "danger")
+        return redirect(url_for('login'))
+
+    user = User.query.get(session['user_id'])
+    user_tz = ZoneInfo(user.timezone) if user.timezone else local_tz
+
+    today = datetime.now(tz=ZoneInfo("UTC"))
+    today_user = today.astimezone(user_tz)
 
     view = request.args.get('view', 'weekly')
     direction = request.args.get('direction', 'current')
@@ -386,11 +639,11 @@ def events():
 
     if 'current_day' in session:
         try:
-            current_day = datetime.strptime(session['current_day'], '%d.%m.%Y')
+            current_day = datetime.strptime(session['current_day'], '%d.%m.%Y').replace(tzinfo=user_tz)
         except ValueError:
-            current_day = today
+            current_day = today_user
     else:
-        current_day = today
+        current_day = today_user
 
     if search_event:
         events_found = Event.query.filter(
@@ -399,14 +652,16 @@ def events():
         ).order_by(Event.date.asc()).all()
 
         if events_found:
-            today = datetime.today()
             for event in events_found:
-                event_date = datetime.strptime(event.date, '%Y-%m-%d')
-                if event_date >= today:
-                    jump_to_date = event.date
+                event_datetime_utc = parse_event_datetime(event.date, event.time)
+                event_datetime_user = event_datetime_utc.astimezone(user_tz)
+
+                if event_datetime_user >= today_user:
+                    jump_to_date = event_datetime_user.strftime('%Y-%m-%d')
                     break
             else:
-                jump_to_date = events_found[-1].date
+                last_event = events_found[-1]
+                jump_to_date = f"{last_event.date}"
 
             view = 'daily'
         else:
@@ -415,11 +670,10 @@ def events():
 
     if jump_to_date:
         try:
-            jump_date = datetime.strptime(jump_to_date, '%Y-%m-%d')
+            jump_date = datetime.strptime(jump_to_date, '%Y-%m-%d').replace(tzinfo=user_tz)
             current_day = jump_date
         except ValueError:
-            jump_date = today
-            current_day = today
+            current_day = today_user
 
     if view == 'daily':
         if not jump_to_date:
@@ -428,24 +682,35 @@ def events():
             elif direction == 'next':
                 current_day += timedelta(days=1)
             elif direction == 'current':
-                current_day = today
+                current_day = today_user
 
         session['current_day'] = current_day.strftime('%d.%m.%Y')
 
-        day_events = Event.query.filter_by(
-            user_id=session['user_id'],
-            date=current_day.strftime('%Y-%m-%d')
+        day_events = Event.query.filter_by(user_id=session['user_id']).filter(
+            Event.date == current_day.strftime('%Y-%m-%d')
         ).all()
+
+        formatted_day_events = []
+        for event in day_events:
+            event_datetime = parse_event_datetime(event.date, event.time)
+            formatted_day_events.append({
+                'id': event.id,
+                'title': event.title,
+                'date': event_datetime.strftime('%Y-%m-%d'),
+                'time': event_datetime.strftime('%H:%M'),
+                'description': event.description,
+                'location': event.location
+            })
 
         current_day_obj = {
             'name': current_day.strftime('%A'),
             'date': current_day.strftime('%d.%m.%Y'),
-            'events': day_events
+            'events': formatted_day_events
         }
 
         return render_template(
             'events.html',
-            day_events=day_events,
+            day_events=formatted_day_events,
             view=view,
             current_day=current_day_obj,
             current_date=current_day.strftime('%d.%m.%Y'),
@@ -467,9 +732,9 @@ def events():
                 end_of_week = start_of_week + timedelta(days=6)
 
             if isinstance(start_of_week, str):
-                start_of_week = datetime.strptime(start_of_week, '%d.%m.%Y')
+                start_of_week = datetime.strptime(start_of_week, '%d.%m.%Y').replace(tzinfo=user_tz)
             if isinstance(end_of_week, str):
-                end_of_week = datetime.strptime(end_of_week, '%d.%m.%Y')
+                end_of_week = datetime.strptime(end_of_week, '%d.%m.%Y').replace(tzinfo=user_tz)
 
             if direction == 'prev':
                 start_of_week -= timedelta(weeks=1)
@@ -480,9 +745,9 @@ def events():
                 end_of_week += timedelta(weeks=1)
                 current_day = start_of_week
             elif direction == 'current':
-                start_of_week = today - timedelta(days=today.weekday())
+                start_of_week = today_user - timedelta(days=today_user.weekday())
                 end_of_week = start_of_week + timedelta(days=6)
-                current_day = today
+                current_day = today_user
 
         session['start_of_week'] = start_of_week.strftime('%d.%m.%Y')
         session['end_of_week'] = end_of_week.strftime('%d.%m.%Y')
@@ -495,10 +760,22 @@ def events():
                 user_id=session['user_id']
             ).filter(Event.date == day.strftime('%Y-%m-%d')).all()
 
+            formatted_day_events = []
+            for event in day_events:
+                event_datetime = parse_event_datetime(event.date, event.time)
+                formatted_day_events.append({
+                    'id': event.id,
+                    'title': event.title,
+                    'date': event_datetime.strftime('%Y-%m-%d'),
+                    'time': event_datetime.strftime('%H:%M'),
+                    'description': event.description,
+                    'location': event.location
+                })
+
             week_days.append({
                 'name': day.strftime('%A'),
                 'date': day.strftime('%d-%m-%Y'),
-                'events': day_events
+                'events': formatted_day_events
             })
 
         return render_template(
@@ -527,10 +804,11 @@ def search_events():
 @app.route('/event/details/<int:event_id>', methods=['GET'])
 def event_details(event_id):
     event = Event.query.get_or_404(event_id)
+    event_datetime = parse_event_datetime(event.date, event.time)
     return jsonify({
         'id': event.id,
         'title': event.title,
-        'time': event.time,
+        'time': event_datetime.strftime('%H:%M'),
         'description': event.description,
         'location': event.location
     })
@@ -538,20 +816,34 @@ def event_details(event_id):
 @app.route('/edit_event/<int:event_id>', methods=['GET', 'POST'])
 def edit_event(event_id):
     event = Event.query.get_or_404(event_id)
-    
-    if request.method == 'POST':
-        event.title = request.form['event_title']
-        event.date = request.form['event_date']
-        event.time = request.form['event_time']
-        event.description = request.form.get('event_description')
-        event.location = request.form.get('event_location')
 
-        db.session.commit()
-        
-        flash("Event updated successfully!", "success")
-        
-        return redirect(url_for('events'))
-    
+    if request.method == 'POST':
+        try:
+            event.title = request.form['event_title']
+            event.date = request.form['event_date']
+            event.time = request.form['event_time'] + ":00"
+            event.description = request.form.get('event_description')
+            event.location = request.form.get('event_location')
+
+            notification_enabled = request.form.get('notification_enabled') == 'on'
+            reminder_time = int(request.form.get('reminder_time', 0)) if notification_enabled else None
+
+            event.notification_enabled = notification_enabled
+            event.reminder_time = reminder_time
+
+            db.session.commit()
+
+            if notification_enabled and reminder_time:
+                schedule_notification(event, reminder_time)
+
+            flash("Event updated successfully!", "success")
+            return redirect(url_for('events'))
+        except ValueError:
+            flash("Invalid input. Please check your data.", "danger")
+        except Exception as e:
+            flash("An error occurred while updating the event.", "danger")
+            logger.error(f"Error in edit_event: {e}")
+
     return render_template('calendar.html', event=event)
 
 @app.route('/delete_event/<int:event_id>')
@@ -569,48 +861,47 @@ def Create_Event():
         return redirect(url_for('login'))
 
     if request.method == 'POST':
-        event_title = request.form['event_title']
-        event_date = request.form['event_date']
-        event_time = request.form['event_time']
-        event_description = request.form.get('event_description')
-        event_location = request.form.get('event_location')
+        try:
+            event_title = request.form['event_title']
+            event_date = request.form['event_date']
+            event_time = request.form['event_time'] + ":00"
+            event_description = request.form.get('event_description')
+            event_location = request.form.get('event_location')
+            notification_enabled = request.form.get('notification_enabled') == 'on'
+            reminder_time = int(request.form.get('reminder_time', 0)) if notification_enabled else None
 
-        if not event_title or not event_date or not event_time:
-            flash("Please fill in all required fields!", "danger")
-            return redirect(url_for('Create_Event'))
+            if not event_title or not event_date or not event_time:
+                flash("Please fill in all required fields!", "danger")
+                return redirect(url_for('Create_Event'))
 
-        user = User.query.filter_by(id=session['user_id']).first()
-        if user:
             new_event = Event(
                 title=event_title,
                 date=event_date,
                 time=event_time,
                 description=event_description,
                 location=event_location,
-                user_id=user.id
+                user_id=session['user_id'],
+                notification_enabled=notification_enabled,
+                reminder_time=reminder_time
             )
             db.session.add(new_event)
             db.session.commit()
+
+            if notification_enabled and reminder_time:
+                schedule_notification(new_event, reminder_time)
+
             flash("Event added successfully!", "success")
             return redirect(url_for('events'))
 
-        flash("Error adding event!", "danger")
+        except ValueError as ve:
+            flash(str(ve), "danger")
+            logger.error(f"ValueError in Create_Event: {ve}")
+        except Exception as e:
+            flash("An error occurred while creating the event.", "danger")
+            logger.error(f"Error in Create_Event: {e}")
 
-    today = datetime.today()
-    start_of_week = today - timedelta(days=today.weekday())
-    end_of_week = start_of_week + timedelta(days=6)
+    return render_template('calendar.html')
 
-    week_days = []
-    for i in range(7):
-        day = start_of_week + timedelta(days=i)
-        day_events = Event.query.filter_by(user_id=session['user_id']).filter(Event.date == day.strftime('%Y-%m-%d')).all()
-        week_days.append({
-            'name': day.strftime('%A'),
-            'date': day.strftime('%Y-%m-%d'),
-            'events': day_events
-        })
-
-    return render_template('calendar.html', week_days=week_days)
 
 @app.route('/E-sports', methods=['GET', 'POST'])
 def Esports():
@@ -1126,48 +1417,34 @@ FACEIT_GAMES = {
 }
 
 def get_youtube_subscribers(channel_identifier):
-    api_key = os.getenv("YOUTUBE_API")
-    channel_id = None
-    
-    if not api_key:
-        print("YouTube API key not found")
-        return None
-        
-    if channel_identifier.startswith('@'):
-        url = f"https://www.googleapis.com/youtube/v3/channels?part=snippet&forHandle={channel_identifier[1:]}&key={api_key}"
-        res = requests.get(url)
-        data = res.json()
-        
-        if res.status_code == 200 and 'items' in data and data["items"]:
-            channel_id = data["items"][0]["id"]
-        else:
-            url = f"https://www.googleapis.com/youtube/v3/channels?part=snippet&forUsername={channel_identifier[1:]}&key={api_key}"
+    try:
+        api_key = os.getenv("YOUTUBE_API")
+        if not api_key:
+            raise ValueError("YouTube API key is missing")
+
+        channel_id = None
+        if channel_identifier.startswith('@'):
+            url = f"https://www.googleapis.com/youtube/v3/channels?part=snippet&forHandle={channel_identifier[1:]}&key={api_key}"
             res = requests.get(url)
+            res.raise_for_status()
             data = res.json()
-            
-            if res.status_code == 200 and 'items' in data and data["items"]:
+            if 'items' in data and data["items"]:
                 channel_id = data["items"][0]["id"]
             else:
-                print(f"Could not find channel for handle/username: {channel_identifier}")
-                return None
-    else:
-        channel_id = channel_identifier
+                raise ValueError(f"Channel not found for handle: {channel_identifier}")
+        else:
+            channel_id = channel_identifier
 
-    url = f"https://www.googleapis.com/youtube/v3/channels?part=statistics&id={channel_id}&key={api_key}"
-    res = requests.get(url)
-    
-    if res.status_code != 200:
-        print(f"YouTube API error: {res.status_code}")
-        return None
-        
-    data = res.json()
-    
-    if 'items' in data and data["items"]:
-        subscriber_count = data["items"][0]["statistics"]["subscriberCount"]
-        print(f"Raw subscriber count from API: {subscriber_count}")
-        return int(subscriber_count)
-    else:
-        print(f"No statistics found for channel: {channel_id}")
+        url = f"https://www.googleapis.com/youtube/v3/channels?part=statistics&id={channel_id}&key={api_key}"
+        res = requests.get(url)
+        res.raise_for_status()
+        data = res.json()
+        if 'items' in data and data["items"]:
+            return int(data["items"][0]["statistics"]["subscriberCount"])
+        else:
+            raise ValueError(f"No statistics found for channel: {channel_id}")
+    except Exception as e:
+        logger.error(f"Error in get_youtube_subscribers: {e}")
         return None
 
 @app.route('/goals', methods=['GET', 'POST'])
@@ -1291,6 +1568,116 @@ def delete_goal(goal_id):
     db.session.delete(goal)
     db.session.commit()
     return redirect(url_for('goals'))
+
+@app.route("/games", methods=["GET", "POST"])
+def games():
+    if 'user_id' not in session:
+        flash("Please log in to access this page.", "danger")
+        return redirect(url_for('login'))
+    user = User.query.get(session['user_id'])
+    page = int(request.args.get('page', 1))
+    per_page = 12
+    search_query = request.args.get('search', '').strip()
+    on_sale = request.args.get('on_sale', '') == "1"
+
+    if request.method == 'POST':
+        game_id = request.form.get('game_id')
+        game_title = request.form.get('game_title')
+        game_thumb = request.form.get('game_thumb')
+        game_price = request.form.get('game_price')
+        if not user.premium and WishlistedGame.query.filter_by(user_id=user.id).count() >= 5:
+            flash('Upgrade to premium to wishlist more than 5 games.', 'warning')
+        else:
+            game = Game.query.filter_by(cheapshark_id=game_id).first()
+            if not game:
+                game = Game(cheapshark_id=game_id, name=game_title, thumb=game_thumb, cheapest_price=game_price)
+                db.session.add(game)
+                db.session.commit()
+            if not WishlistedGame.query.filter_by(user_id=user.id, game_id=game.id).first():
+                db.session.add(WishlistedGame(user_id=user.id, game_id=game.id, last_notified_price=None))
+                db.session.commit()
+                flash(f"{game_title} added to your wishlist!", "success")
+            else:
+                flash("Game already in wishlist.", "info")
+
+    wishlisted_games = []
+    for wg in user.wishlisted_games:
+        game = wg.game
+        resp = requests.get(f"{CHEAPSHARK_API_BASE}/games", params={"id": game.cheapshark_id})
+        data = resp.json() if resp.status_code == 200 else {}
+        info = data.get('info', {})
+        deals = data.get('deals', [])
+        price = deals[0]['price'] if deals else (game.cheapest_price or "N/A")
+        title = info.get('title') or game.name
+        thumb = info.get('thumb') or game.thumb
+        wishlisted_games.append({
+            "cheapshark_id": game.cheapshark_id,
+            "title": title,
+            "thumb": thumb,
+            "price": price
+        })
+
+    if search_query:
+        if on_sale:
+            deals_resp = requests.get(
+                f"{CHEAPSHARK_API_BASE}/deals",
+                params={"title": search_query, "storeID": "1", "pageSize": per_page, "pageNumber": page-1}
+            )
+            games_list = deals_resp.json() if deals_resp.status_code == 200 else []
+        else:
+            games_resp = requests.get(
+                f"{CHEAPSHARK_API_BASE}/games",
+                params={"title": search_query, "limit": per_page, "pageNumber": page-1}
+            )
+            games_list = games_resp.json() if games_resp.status_code == 200 else []
+        total_games = len(games_list)
+        page_count = 1
+    else:
+        deals_resp = requests.get(
+            f"{CHEAPSHARK_API_BASE}/deals",
+            params={"storeID": "1", "pageSize": per_page, "pageNumber": page-1}
+        )
+        games_list = deals_resp.json() if deals_resp.status_code == 200 else []
+        total_games = 100
+        page_count = math.ceil(total_games / per_page)
+
+    wishlisted_ids = {w.game.cheapshark_id for w in user.wishlisted_games}
+    has_next = len(games_list) == per_page
+    has_prev = page > 1
+
+    return render_template(
+        "games.html",
+        user=user,
+        games_list=games_list,
+        wishlisted_ids=wishlisted_ids,
+        wishlisted_games=wishlisted_games,
+        page=page,
+        has_next=has_next,
+        has_prev=has_prev,
+        search_query=search_query,
+        on_sale=on_sale
+    )
+
+@app.route("/games/details/<cheapshark_id>")
+def game_details(cheapshark_id):
+    info_resp = requests.get(f"https://www.cheapshark.com/api/1.0/games", params={"id": cheapshark_id})
+    if info_resp.status_code == 200:
+        return jsonify(info_resp.json())
+    return jsonify({"error": "Game not found"}), 404
+
+@app.route("/games/unwishlist/<cheapshark_id>", methods=["POST"])
+def unwishlist_game(cheapshark_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    user = User.query.get(session['user_id'])
+    game = Game.query.filter_by(cheapshark_id=cheapshark_id).first()
+    if game:
+        w = WishlistedGame.query.filter_by(user_id=user.id, game_id=game.id).first()
+        if w:
+            db.session.delete(w)
+            db.session.commit()
+            flash(f"{game.name} removed from your wishlist.", "info")
+    return redirect(url_for('games', **request.args))
 
 if __name__ == "__main__":
     app.run(debug=True)

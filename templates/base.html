@@ -1,24 +1,144 @@
-<!-- base.html, this is a template file with common structure that all pages use so I do not have to repea the code -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Flask App</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EventManager</title>
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+  />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <style>
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      background-color: white;
+      color: black;
+    }
+
+    body.dark-mode {
+      background-color: #121212;
+      color: #e0e0e0;
+    }
+
+    .container.mt-5 {
+      flex: 1 0 auto;
+    }
+
+    footer {
+      flex-shrink: 0;
+    }
+
+    footer .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    body.dark-mode footer {
+      background-color: #1e1e1e;
+      color: #bfbfbf;
+    }
+
+    footer a {
+      color: inherit;
+    }
+
+    nav.navbar {
+      background-color: #212529 !important;
+    }
+
+    .mode-toggle-btn {
+      cursor: pointer;
+      color: #fff;
+      border: none;
+      background: transparent;
+      font-size: 1.2rem;
+    }
+
+    body.dark-mode .mode-toggle-btn {
+      color: #ddd;
+    }
+  </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('home') }}">EventManager</a>
-        </div>
-    </nav>
-    <div class="container mt-5">
-        {% block content %}{% endblock %}
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container d-flex justify-content-between align-items-center">
+      <a class="navbar-brand" href="{{ url_for('home') }}">EventManager</a>
+
+      <div class="d-flex align-items-center gap-3">
+        {% if session.get('username') %}
+        <span class="text-light me-3">Logged in as: {{ session['username'] }}</span>
+        <a href="{{ url_for('logout') }}" class="btn btn-sm btn-outline-light" style="background-color: red;">Logout</a>
+        {% endif %}
+        <button id="modeToggleBtn" class="mode-toggle-btn" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+          <i class="fas fa-moon"></i>
+        </button>
+      </div>
     </div>
+  </nav>
+
+  <div class="container mt-5">
+    {% block content %}{% endblock %}
+  </div>
+
+  <footer class="bg-dark text-white mt-5 py-3">
+    <div class="container text-center">
+      <small>&copy; 2025 EventManager. All rights reserved.</small>
+      <div class="mt-2">
+        <a href="{{ url_for('terms_of_service') }}" class="me-3 tos_pp">Terms of Service</a>
+        <a href="{{ url_for('privacy_policy') }}" class="tos_pp">Privacy Policy</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const modeToggleBtn = document.getElementById('modeToggleBtn');
+    const body = document.body;
+
+    function loadMode() {
+      const savedMode = localStorage.getItem('mode');
+      if (savedMode === 'dark') {
+        body.classList.add('dark-mode');
+        modeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
+      } else {
+        body.classList.remove('dark-mode');
+        modeToggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
+      }
+    }
+
+    function toggleMode() {
+      if (body.classList.contains('dark-mode')) {
+        body.classList.remove('dark-mode');
+        modeToggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
+        localStorage.setItem('mode', 'light');
+      } else {
+        body.classList.add('dark-mode');
+        modeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
+        localStorage.setItem('mode', 'dark');
+      }
+    }
+
+    modeToggleBtn.addEventListener('click', toggleMode);
+
+    loadMode();
+  </script>
 </body>
 </html>
