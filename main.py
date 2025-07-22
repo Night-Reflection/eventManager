@@ -1174,7 +1174,7 @@ def Sports():
             url = f"https://www.thesportsdb.com/api/v1/json/{API_KEY}/searchteams.php?t={team.name}"
             response = requests.get(url)
             if response.status_code == 200:
-                results = response.json().get('teams', [])
+                results = response.json().get('teams') or []
                 for result in results:
                     if result.get('strTeam', '').lower() == team.name.lower():
                         team_data["logo"] = result.get('strTeamBadge') or result.get('strLogo')

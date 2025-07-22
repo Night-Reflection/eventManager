@@ -27,16 +27,19 @@
         </div>
     </form>
 
+    {% if view == 'weekly' %}
     <div class="mb-3">
         <a href="{{ url_for('events', direction='prev', view=view) }}" class="btn btn-primary">Previous Week</a>
         <a href="{{ url_for('events', direction='next', view=view) }}" class="btn btn-primary">Next Week</a>
         <a href="{{ url_for('events', direction='current', view=view) }}" class="btn btn-info">Go to Current Week</a>
     </div>
+    {% endif %}
 
     {% if view == 'daily' %}
     <div class="mb-3">
         <a href="{{ url_for('events', direction='prev', view='daily') }}" class="btn btn-primary">Previous Day</a>
         <a href="{{ url_for('events', direction='next', view='daily') }}" class="btn btn-primary">Next Day</a>
+        <a href="{{ url_for('events', direction='current', view=view) }}" class="btn btn-info">Go to Current Day</a>
     </div>
     {% endif %}
 
@@ -116,6 +119,29 @@
 </div>
 
 <style>
+body.light-mode {
+  --bg-color: #fff;
+  --text-color: #000;
+  --border-color: #ccc;
+  --event-bg: #f1f1f1;
+  --event-text: #000;
+  --modal-bg: #f8f9fa;
+  --modal-text: #495057;
+  --modal-title: #343a40;
+}
+
+body.dark-mode {
+  --bg-color: #121212;
+  --text-color: #e0e0e0;
+  --border-color: #444;
+  --event-bg: #333;
+  --event-text: #ddd;
+  --modal-bg: #222;
+  --modal-text: #ccc;
+  --modal-title: #eee;
+}
+
+
 .calendar-week {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -123,10 +149,11 @@
     justify-items: center;
     width: 100%;
     overflow-x: auto;
-    color: black;
+    color: inherit; /* use inherited text color */
 }
+
 .calendar-day {
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-color);
     border-radius: 0.5em;
     padding: 1em;
     height: 100%;
@@ -135,23 +162,27 @@
     width: 100%;
     min-width: 12em;
     flex-shrink: 0;
-    background-color: #fff;
+    background-color: var(--bg-color);
+    color: var(--text-color);
 }
+
 .time-slot {
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid var(--border-color);
     padding: 0.5em 0;
-    color: black;
+    color: inherit;
 }
+
 .time-label {
     font-weight: bold;
     margin-bottom: 0.3em;
     text-align: left;
     padding-left: 0.3em;
     font-size: 0.9rem;
-    color: black;
+    color: inherit;
 }
+
 .event {
-    background-color: #f1f1f1;
+    background-color: var(--event-bg);
     padding: 0.5em 0.75em;
     border-radius: 0.5em;
     margin: 0.3em 0 0.3em 0.3em;
@@ -160,26 +191,36 @@
     overflow-wrap: break-word;
     cursor: pointer;
     font-size: 0.95rem;
+    color: var(--event-text);
 }
+
 .list-group-item {
     cursor: pointer;
+    background-color: var(--bg-color);
+    color: var(--text-color);
 }
+
 .modal-content {
     border-radius: 0.75em;
     padding: 1.25em;
-    background-color: #f8f9fa;
+    background-color: var(--modal-bg);
+    color: var(--modal-text);
 }
+
 .modal-header {
-    border-bottom: 1px solid #e9ecef;
+    border-bottom: 1px solid var(--border-color);
 }
+
 .modal-title {
     font-size: 1.5rem;
-    color: #343a40;
+    color: var(--modal-title);
 }
+
 .modal-body {
     font-size: 1rem;
-    color: #495057;
+    color: var(--modal-text);
 }
+
 #editEventBtn, #deleteEventBtn {
     display: inline-block;
     width: 100%;
@@ -189,20 +230,26 @@
     font-weight: bold;
     padding: 0.75em;
     border-radius: 0.5em;
+    color: white;
 }
+
 #editEventBtn {
     background-color: #ffc107;
-    color: white;
 }
+
 #deleteEventBtn {
     background-color: #dc3545;
-    color: white;
 }
+
 #search-suggestions {
     max-height: 12em;
     overflow-y: auto;
     z-index: 1050;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
 }
+
 @media (max-width: 768px) {
     .calendar-week {
         grid-template-columns: repeat(1, 1fr);

@@ -196,5 +196,44 @@
         </div>
     </div>
 </div>
+<style>
+body.light-mode {
+  --table-bg: #ffffff;
+  --table-border: #dee2e6;
+  --table-text: #212529;
+  --table-header-bg: #f8f9fa;
+}
+
+body.dark-mode {
+  --table-bg: #1e1e1e;
+  --table-border: #444;
+  --table-text: #e0e0e0;
+  --table-header-bg: #2c2c2c;
+}
+
+.table {
+  background-color: var(--table-bg);
+  color: var(--table-text);
+}
+
+.table th,
+.table td {
+  border-color: var(--table-border);
+}
+
+.table th,
+.table td {
+  background-color: var(--table-header-bg);
+  color: var(--table-text);
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) {
+  background-color: rgba(0, 0, 0, 0.03); /* Optional: You can tune this per theme */
+}
+
+body.dark-mode .table-striped > tbody > tr:nth-of-type(odd) {
+  background-color: rgba(255, 255, 255, 0.03); /* darker alternate row */
+}
+</style>
 
 {% endblock %}

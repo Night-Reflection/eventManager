@@ -1,198 +1,245 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.7;
-            color: #333;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
-        
-        .container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            margin: 20px auto;
-            padding: 0;
-            overflow: hidden;
-        }
-        
-        .header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            color: white;
-            padding: 40px;
-            text-align: center;
-            border-radius: 20px 20px 0 0;
-        }
-        
-        .header h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-        
-        .header .lead {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-        
-        .content-area {
-            padding: 40px;
-        }
-        
-        .section-header {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            color: white;
-            padding: 15px 20px;
-            border-radius: 10px;
-            margin: 30px 0 20px 0;
-            font-weight: 600;
-            font-size: 1.2rem;
-            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
-        }
-        
-        .section-content {
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            margin-bottom: 25px;
-            border-left: 4px solid #3498db;
-        }
-        
-        .highlight-box {
-            background: linear-gradient(135deg, #e74c3c, #c0392b);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
-        }
-        
-        .info-box {
-            background: linear-gradient(135deg, #27ae60, #219a52);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
-        }
-        
-        .warning-box {
-            background: linear-gradient(135deg, #f39c12, #e67e22);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-            box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3);
-        }
-        
-        .toc {
-            background: #ecf0f1;
-            border-radius: 10px;
-            padding: 25px;
-            margin-bottom: 30px;
-            border: 2px solid #bdc3c7;
-        }
-        
-        .toc h3 {
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-        }
-        
-        .toc ul {
-            list-style: none;
-            padding-left: 0;
-        }
-        
-        .toc li {
-            padding: 8px 0;
-            border-bottom: 1px solid #ddd;
-        }
-        
-        .toc a {
-            text-decoration: none;
-            color: #2980b9;
-            font-weight: 500;
-            transition: color 0.3s ease;
-        }
-        
-        .toc a:hover {
-            color: #3498db;
-        }
-        
-        .footer {
-            background: #2c3e50;
-            color: white;
-            text-align: center;
-            padding: 30px;
-            border-radius: 0 0 20px 20px;
-        }
-        
-        .effective-date {
-            background: #34495e;
-            color: white;
-            padding: 15px;
-            text-align: center;
-            font-weight: 600;
-        }
-        
-        ul.styled-list {
-            list-style: none;
-            padding-left: 0;
-        }
-        
-        ul.styled-list li {
-            padding: 8px 0;
-            padding-left: 25px;
-            position: relative;
-        }
-        
-        ul.styled-list li::before {
-            content: "✓";
-            position: absolute;
-            left: 0;
-            color: #27ae60;
-            font-weight: bold;
-        }
-        
-        .definition-box {
-            background: #e8f4fd;
-            border: 1px solid #3498db;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 15px 0;
-        }
-        
-        .definition-box strong {
-            color: #2980b9;
-        }
-        
-        @media (max-width: 768px) {
-            .header h1 {
-                font-size: 2rem;
-            }
-            
-            .content-area {
-                padding: 20px;
-            }
-        }
+<style>
+/* Theme Variables */
+body.light-mode {
+  --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --text-color: #333;
+  --container-bg: rgba(255, 255, 255, 0.95);
+  --header-bg: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+  --section-header-bg: linear-gradient(135deg, #3498db, #2980b9);
+  --section-content-bg: #f8f9fa;
+  --highlight-bg: linear-gradient(135deg, #e74c3c, #c0392b);
+  --info-bg: linear-gradient(135deg, #27ae60, #219a52);
+  --warning-bg: linear-gradient(135deg, #f39c12, #e67e22);
+  --toc-bg: #ecf0f1;
+  --toc-border: #bdc3c7;
+  --toc-heading-color: #2c3e50;
+  --link-color: #2980b9;
+  --link-hover: #3498db;
+  --effective-date-bg: #34495e;
+  --definition-bg: #e8f4fd;
+  --definition-border: #3498db;
+  --definition-strong: #2980b9;
+  --checkmark-color: #27ae60;
+  --gdpr-bg: linear-gradient(135deg, #8e44ad, #9b59b6);
+}
 
-        .gdpr-boxx {
-            background: linear-gradient(135deg, #8e44ad, #9b59b6) !important;
-            color: white !important;
-            padding: 20px !important;
-            border-radius: 10px !important;
-            margin: 20px 0 !important;
-            box-shadow: 0 4px 15px rgba(142, 68, 173, 0.3) !important;
-            display: block !important;
-        }
-    </style>
+body.dark-mode {
+  --bg-gradient: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  --text-color: #f1f1f1;
+  --container-bg: rgba(30, 30, 30, 0.95);
+  --header-bg: linear-gradient(135deg, #0f2027 0%, #203a43 100%);
+  --section-header-bg: linear-gradient(135deg, #2980b9, #1c5980);
+  --section-content-bg: #2e2e2e;
+  --highlight-bg: linear-gradient(135deg, #c0392b, #922b21);
+  --info-bg: linear-gradient(135deg, #1e8449, #145a32);
+  --warning-bg: linear-gradient(135deg, #d68910, #af601a);
+  --toc-bg: #1e1e1e;
+  --toc-border: #444;
+  --toc-heading-color: #f1f1f1;
+  --link-color: #5dade2;
+  --link-hover: #85c1e9;
+  --effective-date-bg: #1b2631;
+  --definition-bg: #1f2e3d;
+  --definition-border: #2980b9;
+  --definition-strong: #5dade2;
+  --checkmark-color: #2ecc71;
+  --gdpr-bg: linear-gradient(135deg, #6c3483, #512e5f);
+}
+
+/* General */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.7;
+  color: var(--text-color);
+  background: var(--bg-gradient);
+  min-height: 100vh;
+}
+
+.terms-page .container {
+  background: var(--container-bg);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+  margin: 20px auto;
+  padding: 0;
+  overflow: hidden;
+}
+
+.header {
+  background: var(--header-bg);
+  color: white;
+  padding: 40px;
+  text-align: center;
+  border-radius: 20px 20px 0 0;
+}
+
+.header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.header .lead {
+  font-size: 1.1rem;
+  opacity: 0.9;
+}
+
+.content-area {
+  padding: 40px;
+}
+
+.section-header {
+  background: var(--section-header-bg);
+  color: white;
+  padding: 15px 20px;
+  border-radius: 10px;
+  margin: 30px 0 20px 0;
+  font-weight: 600;
+  font-size: 1.2rem;
+  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+}
+
+.section-content {
+  padding: 20px;
+  background: var(--section-content-bg);
+  border-radius: 10px;
+  margin-bottom: 25px;
+  border-left: 4px solid #3498db;
+}
+
+/* Boxes */
+.highlight-box {
+  background: var(--highlight-bg);
+  color: white;
+  padding: 20px;
+  border-radius: 10px;
+  margin: 20px 0;
+  box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+}
+
+.info-box {
+  background: var(--info-bg);
+  color: white;
+  padding: 20px;
+  border-radius: 10px;
+  margin: 20px 0;
+  box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+}
+
+.warning-box {
+  background: var(--warning-bg);
+  color: white;
+  padding: 20px;
+  border-radius: 10px;
+  margin: 20px 0;
+  box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3);
+}
+
+/* TOC */
+.toc {
+  background: var(--toc-bg);
+  border-radius: 10px;
+  padding: 25px;
+  margin-bottom: 30px;
+  border: 2px solid var(--toc-border);
+}
+
+.toc h3 {
+  color: var(--toc-heading-color);
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+}
+
+.toc ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.toc li {
+  padding: 8px 0;
+  border-bottom: 1px solid #ddd;
+}
+
+.toc a {
+  text-decoration: none;
+  color: var(--link-color);
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.toc a:hover {
+  color: var(--link-hover);
+}
+
+.effective-date {
+  background: var(--effective-date-bg);
+  color: white;
+  padding: 15px;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* Lists */
+ul.styled-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+ul.styled-list li {
+  padding: 8px 0;
+  padding-left: 25px;
+  position: relative;
+}
+
+ul.styled-list li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--checkmark-color);
+  font-weight: bold;
+}
+
+/* Definitions */
+.definition-box {
+  background: var(--definition-bg);
+  border: 1px solid var(--definition-border);
+  border-radius: 8px;
+  padding: 15px;
+  margin: 15px 0;
+}
+
+.definition-box strong {
+  color: var(--definition-strong);
+}
+
+/* GDPR Box */
+.gdpr-boxx {
+  background: var(--gdpr-bg) !important;
+  color: white !important;
+  padding: 20px !important;
+  border-radius: 10px !important;
+  margin: 20px 0 !important;
+  box-shadow: 0 4px 15px rgba(142, 68, 173, 0.3) !important;
+  display: block !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .header h1 {
+    font-size: 2rem;
+  }
+
+  .content-area {
+    padding: 20px;
+  }
+}
+</style>
+<div class="terms-page">
     <div class="container">
         <div class="header">
             <h1><i class="fas fa-calendar-alt me-3"></i>EventManager</h1>
@@ -1012,4 +1059,5 @@
             </div>
         </div>
     </div>
+</div>
 {% endblock %}

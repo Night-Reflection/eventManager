@@ -1,54 +1,65 @@
-body {
+/* LIGHT MODE */
+body.light-mode {
     background-color: #f4f4f4;
+    color: black;
     font-family: Arial, sans-serif;
 }
 
-h2 {
+body.light-mode h2 {
     color: #333;
 }
 
-.login-container,
-.register-container,
-.verify-container {
-    max-width: 90%;
-    margin: 5% auto;
-    padding: 2em;
+body.light-mode .login-container,
+body.light-mode .register-container,
+body.light-mode .verify-container {
     background: white;
-    border-radius: 0.5em;
     box-shadow: 0 0.25em 0.5em rgba(0, 0, 0, 0.1);
 }
 
-button {
-    font-size: 1.125em;
-    border-radius: 0.3125em;
-}
-
-.btn-group {
-    margin: 2em 0;
-}
-
-.navbar {
-    margin-bottom: 2em;
-}
-
-.navbar-brand {
-    font-weight: bold;
-}
-
-.container {
-    margin-top: 2em;
-}
-
-.hour-slot {
+body.light-mode .hour-slot {
     border-bottom: 0.0625em solid #ddd;
 }
 
-.event {
+body.light-mode .event {
     background-color: #f1f1f1;
-    padding: 0.5em;
-    border-radius: 0.3125em;
-    font-size: 0.75em;
+    color: black;
 }
+
+body.light-mode .tos_pp {
+    color: blue;
+}
+
+/* DARK MODE */
+body.dark-mode {
+    background-color: #121212;
+    color: #e0e0e0;
+    font-family: Arial, sans-serif;
+}
+
+body.dark-mode h2 {
+    color: #ddd;
+}
+
+body.dark-mode .login-container,
+body.dark-mode .register-container,
+body.dark-mode .verify-container {
+    background: #1e1e1e;
+    box-shadow: 0 0.25em 0.5em rgba(0, 0, 0, 0.7);
+}
+
+body.dark-mode .hour-slot {
+    border-bottom: 0.0625em solid #444;
+}
+
+body.dark-mode .event {
+    background-color: #2a2a2a;
+    color: #ccc;
+}
+
+body.dark-mode .tos_pp {
+    color: #5aaaff; /* lighter blue for dark bg */
+}
+
 .btn-facebook {
     background-color: #3b5998;
     color: white;
@@ -84,6 +95,174 @@ button {
     background-color: #cc0000;
     color: white;
 }
-.tos_pp{
-    color: blue;
+
+/* General common styles for both modes */
+button {
+    font-size: 1.125em;
+    border-radius: 0.3125em;
 }
+
+.btn-group {
+    margin: 2em 0;
+}
+
+.navbar {
+    margin-bottom: 2em;
+}
+
+.navbar-brand {
+    font-weight: bold;
+}
+
+.container {
+    margin-top: 2em;
+}
+
+/* calendar.html */
+body.dark-mode input.form-control,
+body.dark-mode select.form-select,
+body.dark-mode textarea.form-control {
+  background-color: #2a2a2a;
+  color: #e0e0e0;
+  border: 1px solid #555;
+}
+
+body.dark-mode input.form-control::placeholder,
+body.dark-mode textarea.form-control::placeholder {
+  color: #bbb;
+}
+
+/* Labels */
+body.dark-mode label.form-label {
+  color: #ddd;
+}
+
+/* Alerts */
+body.dark-mode .alert {
+  background-color: #333;
+  color: #eee;
+  border-color: #444;
+}
+
+body.dark-mode .btn-success {
+  background-color: #28a745;
+  border-color: #28a745;
+}
+
+body.dark-mode .btn-success:hover {
+  background-color: #218838;
+  border-color: #1e7e34;
+}
+
+/* ---------------------------------------------------------------------------------------------------------------------------------------------------------- */
+/* E-sports.html */
+/* Light mode styles*/
+.card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s;
+    border-radius: 1em;
+}
+
+.card:hover {
+    transform: scale(1.03);
+    box-shadow: 0 0.5em 1.25em rgba(0,0,0,0.3);
+}
+
+.card-title {
+    font-size: 1.25rem;
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.follow-btn {
+    border-radius: 1.5em;
+    font-weight: bold;
+    transition: all 0.2s ease-in-out;
+}
+
+.follow-btn:disabled {
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+    cursor: not-allowed;
+}
+
+.team-logo {
+    width: 3.75em;
+    height: 3.75em;
+    object-fit: contain;
+    border-radius: 50%;
+    margin-bottom: 0.625em;
+    cursor: pointer;
+}
+
+.team-name {
+    display: inline-block;
+    margin-top: 0.625em;
+    font-size: 1.25rem;
+}
+
+/* === Dark mode overrides === */
+body.dark-mode .card {
+    background-color: #1e1e1e;
+    color: #ddd;
+    box-shadow: 0 0.5em 1.25em rgba(0,0,0,0.8);
+}
+
+body.dark-mode .card:hover {
+    box-shadow: 0 0.5em 1.5em rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .card-title,
+body.dark-mode .team-name {
+    color: #eee;
+}
+
+body.dark-mode .follow-btn {
+    color: #fff;
+}
+
+body.dark-mode .follow-btn:disabled {
+    background-color: #555 !important;
+    border-color: #555 !important;
+}
+
+body.dark-mode h1.text-primary {
+    color: #a1caff;
+}
+
+body.dark-mode input.form-control,
+body.dark-mode .form-check-input {
+    background-color: #2a2a2a;
+    color: #e0e0e0;
+    border-color: #555;
+}
+
+body.dark-mode input.form-control::placeholder {
+    color: #aaa;
+}
+
+body.dark-mode label.form-label,
+body.dark-mode .form-check-label {
+    color: #ccc;
+}
+
+body.dark-mode button.btn-outline-primary {
+    color: #a1caff;
+    border-color: #a1caff;
+}
+
+body.dark-mode button.btn-outline-primary:hover {
+    background-color: #a1caff;
+    color: #222;
+}
+
+body.dark-mode .btn-outline-secondary {
+    color: #ccc;
+    border-color: #666;
+}
+
+body.dark-mode .btn-outline-secondary:hover {
+    background-color: #666;
+    color: #eee;
+}
+/* ---------------------------------------------------------------------------------------------------------------------------------------------------------- */

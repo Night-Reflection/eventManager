@@ -165,4 +165,84 @@ $(document).on('click', '.game-detail', function() {
     });
 });
 </script>
+<style>
+  body.light-mode {
+    --bg-color: #fff;
+    --text-color: #000;
+    --border-color: #ccc;
+    --card-bg: #f9f9f9;
+    --card-shadow: rgba(0, 0, 0, 0.1);
+    --btn-primary-bg: #0d6efd;
+    --btn-primary-text: #fff;
+    --btn-outline-primary-text: #0d6efd;
+    --btn-outline-primary-border: #0d6efd;
+    --alert-bg-success: #d1e7dd;
+    --alert-text-success: #0f5132;
+    --modal-bg: #fff;
+    --modal-text: #000;
+  }
+
+  body.dark-mode {
+    --bg-color: #121212;
+    --text-color: #e0e0e0;
+    --border-color: #444;
+    --card-bg: #1e1e1e;
+    --card-shadow: rgba(0, 0, 0, 0.7);
+    --btn-primary-bg: #0d6efd;
+    --btn-primary-text: #fff;
+    --btn-outline-primary-text: #0d6efd;
+    --btn-outline-primary-border: #0d6efd;
+    --alert-bg-success: #1e4620;
+    --alert-text-success: #a6d785;
+    --modal-bg: #222;
+    --modal-text: #ddd;
+  }
+
+  /* Modal Styling */
+  .modal-content {
+    background-color: var(--modal-bg);
+    color: var(--modal-text);
+  }
+
+  .modal-header,
+  .modal-footer {
+    border-color: var(--border-color);
+  }
+
+  .form-control {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+  }
+
+  .form-control::placeholder {
+    color: var(--text-color);
+    opacity: 0.6;
+  }
+
+  .form-check-label {
+    color: var(--text-color);
+  }
+
+  /* Pagination */
+  .pagination .page-link {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+  }
+
+  .pagination .page-item.disabled .page-link {
+    color: var(--text-color);
+    opacity: 0.6;
+  }
+
+  .pagination .page-link:hover {
+    background-color: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+  }
+
+  .text-muted {
+    color: darkred !important;
+  }
+</style>
 {% endblock %}

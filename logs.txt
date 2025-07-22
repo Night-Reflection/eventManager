@@ -40,3 +40,38 @@
 2025-05-25 18:11:17 INFO: Databases created
 2025-05-25 18:13:26 INFO: Logger initialized
 2025-05-25 18:13:26 INFO: Databases created
+2025-07-22 19:47:42 INFO: Logger initialized
+2025-07-22 19:47:43 INFO: Databases created
+2025-07-22 19:47:44 INFO: Logger initialized
+2025-07-22 19:47:44 INFO: Databases created
+2025-07-22 19:49:38 INFO: Scheduled notification for event 'Test event' at 2025-07-22 17:51:00+00:00 UTC
+2025-07-22 19:51:00 INFO: Mailjet Response: 200, {'Messages': [{'Status': 'success', 'CustomID': '', 'To': [{'Email': '6mrnight9@gmail.com', 'MessageUUID': '49304f1b-e455-43f1-881a-24cae6a3f899', 'MessageID': 288230407576833760, 'MessageHref': 'https://api.mailjet.com/v3/REST/message/288230407576833760'}], 'Cc': [], 'Bcc': []}]}
+2025-07-22 19:53:32 INFO: Scheduled notification for event 'Test event' at 2025-07-22 17:49:00+00:00 UTC
+2025-07-22 19:53:57 INFO: Scheduled notification for event 'Test event' at 2025-07-22 17:49:00+00:00 UTC
+2025-07-22 19:54:15 INFO: Scheduled notification for event 'Test event' at 2025-07-22 17:51:00+00:00 UTC
+2025-07-22 19:58:59 INFO: Logger initialized
+2025-07-22 19:58:59 INFO: Databases created
+2025-07-22 19:59:05 INFO: Logger initialized
+2025-07-22 19:59:05 INFO: Databases created
+2025-07-22 20:00:01 INFO: Logger initialized
+2025-07-22 20:00:01 INFO: Databases created
+2025-07-22 20:01:09 INFO: Logger initialized
+2025-07-22 20:01:09 INFO: Databases created
+2025-07-22 20:01:32 INFO: Logger initialized
+2025-07-22 20:01:32 INFO: Databases created
+2025-07-22 20:01:34 INFO: Logger initialized
+2025-07-22 20:01:34 INFO: Databases created
+2025-07-22 20:02:43 INFO: Updating NightReflect (cs2) from 1052 ➝ 1028
+2025-07-22 20:02:43 INFO: Updating YouTube channel @Sparkles from 2440000 ➝ 2460000
+2025-07-22 20:02:43 INFO: Updating NightReflect (cs2) from 1052 ➝ 1028
+2025-07-22 20:03:02 INFO: Logger initialized
+2025-07-22 20:03:02 INFO: Databases created
+2025-07-22 20:03:48 INFO: Logger initialized
+2025-07-22 20:03:48 INFO: Databases created
+2025-07-22 20:47:44 INFO: Sale notification sent to 6mrnight9@gmail.com
+2025-07-22 21:55:34 INFO: Logger initialized
+2025-07-22 21:55:34 INFO: Databases created
+2025-07-22 21:55:39 INFO: Logger initialized
+2025-07-22 21:55:39 INFO: Databases created
+2025-07-22 21:55:40 INFO: Logger initialized
+2025-07-22 21:55:40 INFO: Databases created

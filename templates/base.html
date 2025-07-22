@@ -17,66 +17,269 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <style>
-    html,
-    body {
-      height: 100%;
-      margin: 0;
-      transition: background-color 0.3s, color 0.3s;
-    }
+  html,
+  body {
+    height: 100%;
+    margin: 0;
+    transition: background-color 0.3s, color 0.3s;
+  }
 
-    body {
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-      background-color: white;
-      color: black;
-    }
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
 
-    body.dark-mode {
-      background-color: #121212;
-      color: #e0e0e0;
-    }
+  body.light-mode {
+    background-color: white;
+    color: black;
+  }
 
-    .container.mt-5 {
-      flex: 1 0 auto;
-    }
+  body.dark-mode {
+    background-color: #121212;
+    color: #e0e0e0;
+  }
 
-    footer {
-      flex-shrink: 0;
-    }
+  .container.mt-5 {
+    flex: 1 0 auto;
+  }
 
-    footer .container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.5rem;
-    }
+  footer {
+    flex-shrink: 0;
+  }
 
-    body.dark-mode footer {
-      background-color: #1e1e1e;
-      color: #bfbfbf;
-    }
+  footer .container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
 
-    footer a {
-      color: inherit;
-    }
+  body.light-mode footer {
+    background-color: #3b74adff !important;
+    color: #ffffff;
+  }
 
-    nav.navbar {
-      background-color: #212529 !important;
-    }
+  body.dark-mode footer {
+    background-color: #143250ff !important;
+    color: #bfbfbf;
+  }
 
-    .mode-toggle-btn {
-      cursor: pointer;
-      color: #fff;
-      border: none;
-      background: transparent;
-      font-size: 1.2rem;
-    }
+  footer a {
+    color: inherit;
+  }
 
-    body.dark-mode .mode-toggle-btn {
-      color: #ddd;
-    }
-  </style>
+  nav.navbar {
+    background-color: #3b74adff !important;
+  }
+
+  body.dark-mode nav.navbar {
+    background-color: #143250ff !important;
+  }
+
+  .theme-switch {
+    --toggle-size: 15px;
+    /* the size is adjusted using font-size,
+      this is not transform scale,
+      so you can choose any size */
+    --container-width: 5.625em;
+    --container-height: 2.5em;
+    --container-radius: 6.25em;
+    /* radius 0 - minecraft mode :) */
+    --container-light-bg: #3D7EAE;
+    --container-night-bg: #1D1F2C;
+    --circle-container-diameter: 3.375em;
+    --sun-moon-diameter: 2.125em;
+    --sun-bg: #ECCA2F;
+    --moon-bg: #C4C9D1;
+    --spot-color: #959DB1;
+    --circle-container-offset: calc((var(--circle-container-diameter) - var(--container-height)) / 2 * -1);
+    --stars-color: #fff;
+    --clouds-color: #F3FDFF;
+    --back-clouds-color: #AACADF;
+    --transition: .5s cubic-bezier(0, -0.02, 0.4, 1.25);
+    --circle-transition: .3s cubic-bezier(0, -0.02, 0.35, 1.17);
+  }
+
+  .theme-switch, .theme-switch *, .theme-switch *::before, .theme-switch *::after {
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-size: var(--toggle-size);
+  }
+
+  .theme-switch__container {
+    width: var(--container-width);
+    height: var(--container-height);
+    background-color: var(--container-light-bg);
+    border-radius: var(--container-radius);
+    overflow: hidden;
+    cursor: pointer;
+    -webkit-box-shadow: 0em -0.062em 0.062em rgba(0, 0, 0, 0.25), 0em 0.062em 0.125em rgba(255, 255, 255, 0.94);
+    box-shadow: 0em -0.062em 0.062em rgba(0, 0, 0, 0.25), 0em 0.062em 0.125em rgba(255, 255, 255, 0.94);
+    -webkit-transition: var(--transition);
+    -o-transition: var(--transition);
+    transition: var(--transition);
+    position: relative;
+  }
+
+  .theme-switch__container::before {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    -webkit-box-shadow: 0em 0.05em 0.187em rgba(0, 0, 0, 0.25) inset, 0em 0.05em 0.187em rgba(0, 0, 0, 0.25) inset;
+    box-shadow: 0em 0.05em 0.187em rgba(0, 0, 0, 0.25) inset, 0em 0.05em 0.187em rgba(0, 0, 0, 0.25) inset;
+    border-radius: var(--container-radius)
+  }
+
+  .theme-switch__checkbox {
+    display: none;
+  }
+
+  .theme-switch__circle-container {
+    width: var(--circle-container-diameter);
+    height: var(--circle-container-diameter);
+    background-color: rgba(255, 255, 255, 0.1);
+    position: absolute;
+    left: var(--circle-container-offset);
+    top: var(--circle-container-offset);
+    border-radius: var(--container-radius);
+    -webkit-box-shadow: inset 0 0 0 3.375em rgba(255, 255, 255, 0.1), inset 0 0 0 3.375em rgba(255, 255, 255, 0.1), 0 0 0 0.625em rgba(255, 255, 255, 0.1), 0 0 0 1.25em rgba(255, 255, 255, 0.1);
+    box-shadow: inset 0 0 0 3.375em rgba(255, 255, 255, 0.1), inset 0 0 0 3.375em rgba(255, 255, 255, 0.1), 0 0 0 0.625em rgba(255, 255, 255, 0.1), 0 0 0 1.25em rgba(255, 255, 255, 0.1);
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-transition: var(--circle-transition);
+    -o-transition: var(--circle-transition);
+    transition: var(--circle-transition);
+    pointer-events: none;
+  }
+
+  .theme-switch__sun-moon-container {
+    pointer-events: auto;
+    position: relative;
+    z-index: 2;
+    width: var(--sun-moon-diameter);
+    height: var(--sun-moon-diameter);
+    margin: auto;
+    border-radius: var(--container-radius);
+    background-color: var(--sun-bg);
+    -webkit-box-shadow: 0.062em 0.062em 0.062em 0em rgba(254, 255, 239, 0.61) inset, 0em -0.062em 0.062em 0em #a1872a inset;
+    box-shadow: 0.062em 0.062em 0.062em 0em rgba(254, 255, 239, 0.61) inset, 0em -0.062em 0.062em 0em #a1872a inset;
+    -webkit-filter: drop-shadow(0.062em 0.125em 0.125em rgba(0, 0, 0, 0.25)) drop-shadow(0em 0.062em 0.125em rgba(0, 0, 0, 0.25));
+    filter: drop-shadow(0.062em 0.125em 0.125em rgba(0, 0, 0, 0.25)) drop-shadow(0em 0.062em 0.125em rgba(0, 0, 0, 0.25));
+    overflow: hidden;
+    -webkit-transition: var(--transition);
+    -o-transition: var(--transition);
+    transition: var(--transition);
+  }
+
+  .theme-switch__moon {
+    -webkit-transform: translateX(100%);
+    -ms-transform: translateX(100%);
+    transform: translateX(100%);
+    width: 100%;
+    height: 100%;
+    background-color: var(--moon-bg);
+    border-radius: inherit;
+    -webkit-box-shadow: 0.062em 0.062em 0.062em 0em rgba(254, 255, 239, 0.61) inset, 0em -0.062em 0.062em 0em #969696 inset;
+    box-shadow: 0.062em 0.062em 0.062em 0em rgba(254, 255, 239, 0.61) inset, 0em -0.062em 0.062em 0em #969696 inset;
+    -webkit-transition: var(--transition);
+    -o-transition: var(--transition);
+    transition: var(--transition);
+    position: relative;
+  }
+
+  .theme-switch__spot {
+    position: absolute;
+    top: 0.75em;
+    left: 0.312em;
+    width: 0.75em;
+    height: 0.75em;
+    border-radius: var(--container-radius);
+    background-color: var(--spot-color);
+    -webkit-box-shadow: 0em 0.0312em 0.062em rgba(0, 0, 0, 0.25) inset;
+    box-shadow: 0em 0.0312em 0.062em rgba(0, 0, 0, 0.25) inset;
+  }
+
+  .theme-switch__spot:nth-of-type(2) {
+    width: 0.375em;
+    height: 0.375em;
+    top: 0.937em;
+    left: 1.375em;
+  }
+
+  .theme-switch__spot:nth-last-of-type(3) {
+    width: 0.25em;
+    height: 0.25em;
+    top: 0.312em;
+    left: 0.812em;
+  }
+
+  .theme-switch__clouds {
+    width: 1.25em;
+    height: 1.25em;
+    background-color: var(--clouds-color);
+    border-radius: var(--container-radius);
+    position: absolute;
+    bottom: -0.625em;
+    left: 0.312em;
+    -webkit-box-shadow: 0.937em 0.312em var(--clouds-color), -0.312em -0.312em var(--back-clouds-color), 1.437em 0.375em var(--clouds-color), 0.5em -0.125em var(--back-clouds-color), 2.187em 0 var(--clouds-color), 1.25em -0.062em var(--back-clouds-color), 2.937em 0.312em var(--clouds-color), 2em -0.312em var(--back-clouds-color), 3.625em -0.062em var(--clouds-color), 2.625em 0em var(--back-clouds-color), 4.5em -0.312em var(--clouds-color), 3.375em -0.437em var(--back-clouds-color), 4.625em -1.75em 0 0.437em var(--clouds-color), 4em -0.625em var(--back-clouds-color), 4.125em -2.125em 0 0.437em var(--back-clouds-color);
+    box-shadow: 0.937em 0.312em var(--clouds-color), -0.312em -0.312em var(--back-clouds-color), 1.437em 0.375em var(--clouds-color), 0.5em -0.125em var(--back-clouds-color), 2.187em 0 var(--clouds-color), 1.25em -0.062em var(--back-clouds-color), 2.937em 0.312em var(--clouds-color), 2em -0.312em var(--back-clouds-color), 3.625em -0.062em var(--clouds-color), 2.625em 0em var(--back-clouds-color), 4.5em -0.312em var(--clouds-color), 3.375em -0.437em var(--back-clouds-color), 4.625em -1.75em 0 0.437em var(--clouds-color), 4em -0.625em var(--back-clouds-color), 4.125em -2.125em 0 0.437em var(--back-clouds-color);
+    -webkit-transition: 0.5s cubic-bezier(0, -0.02, 0.4, 1.25);
+    -o-transition: 0.5s cubic-bezier(0, -0.02, 0.4, 1.25);
+    transition: 0.5s cubic-bezier(0, -0.02, 0.4, 1.25);
+  }
+
+  .theme-switch__stars-container {
+    position: absolute;
+    color: var(--stars-color);
+    top: -100%;
+    left: 0.312em;
+    width: 2.75em;
+    height: auto;
+    -webkit-transition: var(--transition);
+    -o-transition: var(--transition);
+    transition: var(--transition);
+  }
+
+  /* actions */
+
+  .theme-switch__checkbox:checked + .theme-switch__container {
+    background-color: var(--container-night-bg);
+  }
+
+  .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__circle-container {
+    left: calc(100% - var(--circle-container-offset) - var(--circle-container-diameter));
+  }
+
+  .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__circle-container:hover {
+    left: calc(100% - var(--circle-container-offset) - var(--circle-container-diameter) - 0.187em)
+  }
+
+  .theme-switch__circle-container:hover {
+    left: calc(var(--circle-container-offset) + 0.187em);
+  }
+
+  .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__moon {
+    -webkit-transform: translate(0);
+    -ms-transform: translate(0);
+    transform: translate(0);
+  }
+
+  .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__clouds {
+    bottom: -4.062em;
+  }
+
+  .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__stars-container {
+    top: 50%;
+    -webkit-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+  }
+</style>
 </head>
 <body>
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -88,9 +291,26 @@
         <span class="text-light me-3">Logged in as: {{ session['username'] }}</span>
         <a href="{{ url_for('logout') }}" class="btn btn-sm btn-outline-light" style="background-color: red;">Logout</a>
         {% endif %}
-        <button id="modeToggleBtn" class="mode-toggle-btn" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
-          <i class="fas fa-moon"></i>
-        </button>
+        <label class="theme-switch" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
+          <input type="checkbox" id="modeToggleCheckbox" class="theme-switch__checkbox" />
+          <div class="theme-switch__container">
+            <div class="theme-switch__circle-container">
+              <div class="theme-switch__sun-moon-container">
+                <div class="theme-switch__moon">
+                  <div class="theme-switch__spot"></div>
+                  <div class="theme-switch__spot"></div>
+                  <div class="theme-switch__spot"></div>
+                </div>
+              </div>
+              <div class="theme-switch__clouds"></div>
+              <div class="theme-switch__stars-container">
+                <i class="fas fa-star" style="font-size: 0.8em;"></i>
+                <i class="fas fa-star" style="font-size: 1em; margin-left: 0.3em;"></i>
+                <i class="fas fa-star" style="font-size: 0.7em; margin-left: 0.3em;"></i>
+              </div>
+            </div>
+          </div>
+        </label>
       </div>
     </div>
   </nav>
@@ -109,36 +329,39 @@
     </div>
   </footer>
 
-  <script>
-    const modeToggleBtn = document.getElementById('modeToggleBtn');
-    const body = document.body;
+<script>
+const modeToggleCheckbox = document.getElementById('modeToggleCheckbox');
+const body = document.body;
 
-    function loadMode() {
-      const savedMode = localStorage.getItem('mode');
-      if (savedMode === 'dark') {
-        body.classList.add('dark-mode');
-        modeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
-      } else {
-        body.classList.remove('dark-mode');
-        modeToggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
-      }
-    }
+// On page load, set checkbox and body class from localStorage
+function loadMode() {
+  const savedMode = localStorage.getItem('mode');
+  if (savedMode === 'dark') {
+    body.classList.add('dark-mode');
+    body.classList.remove('light-mode');
+    modeToggleCheckbox.checked = true;
+  } else {
+    body.classList.add('light-mode');
+    body.classList.remove('dark-mode');
+    modeToggleCheckbox.checked = false;
+  }
+}
 
-    function toggleMode() {
-      if (body.classList.contains('dark-mode')) {
-        body.classList.remove('dark-mode');
-        modeToggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
-        localStorage.setItem('mode', 'light');
-      } else {
-        body.classList.add('dark-mode');
-        modeToggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
-        localStorage.setItem('mode', 'dark');
-      }
-    }
+// On toggle, switch mode and save preference
+modeToggleCheckbox.addEventListener('change', () => {
+  if (modeToggleCheckbox.checked) {
+    body.classList.add('dark-mode');
+    body.classList.remove('light-mode');
+    localStorage.setItem('mode', 'dark');
+  } else {
+    body.classList.add('light-mode');
+    body.classList.remove('dark-mode');
+    localStorage.setItem('mode', 'light');
+  }
+});
 
-    modeToggleBtn.addEventListener('click', toggleMode);
+loadMode();
 
-    loadMode();
-  </script>
+</script>
 </body>
 </html>
