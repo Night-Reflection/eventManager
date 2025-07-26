@@ -13,11 +13,11 @@
             </div>
         {% endfor %}
     {% endif %}
-{% endwith %}
+    {% endwith %}
 
     <p class="lead">Update your contact information</p>
 
-    <form method="POST" action="{{ url_for('settings') }}">
+    <form method="POST" action="{{ url_for('settings') }}" enctype="multipart/form-data">
         <div class="mb-3">
             <label for="email" class="form-label">Email Address</label>
             <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
@@ -26,7 +26,43 @@
             <label for="phone" class="form-label">Phone Number</label>
             <input type="text" class="form-control" id="phone" name="phone" value="{{ user.phone_number }}">
         </div>
+        <div class="mb-3">
+            <label for="pfp" class="form-label">Profile Picture</label><br>
+            {% if user.pfp %}
+                <img src="{{ url_for('user_pfp', user_id=user.id) }}" alt="Profile Picture" style="width:100px; height:100px; border-radius:50%; object-fit:cover;">
+            {% else %}
+                <img src="{{ url_for('static', filename='default_pfp.png') }}" alt="Default Profile Picture" style="width:100px; height:100px; border-radius:50%; object-fit:cover;">
+            {% endif %}
+            <input type="file" class="form-control-file d-none" id="pfp" name="pfp" accept="image/*">
+            <br>
+            <button type="button" id="customFileBtn" class="btn btn-primary mt-2">Choose Profile Picture</button>
+            <span id="fileName" class="ms-2"></span>
+        </div><br>
         <button type="submit" class="btn btn-success">Save Settings</button>
     </form>
+            <hr class="my-4">
+        <h4 class="text-danger">Danger Zone</h4>
+        <form method="POST" action="{{ url_for('request_delete_account') }}">
+            <button type="submit" class="btn btn-outline-danger mt-2">Delete My Account</button>
+</form>
 </div>
+
+<script>
+  const realFileInput = document.getElementById('pfp');
+  const customBtn = document.getElementById('customFileBtn');
+  const fileNameDisplay = document.getElementById('fileName');
+
+  customBtn.addEventListener('click', () => {
+    realFileInput.click();
+  });
+
+  realFileInput.addEventListener('change', () => {
+    if (realFileInput.files.length > 0) {
+      fileNameDisplay.textContent = realFileInput.files[0].name;
+    } else {
+      fileNameDisplay.textContent = '';
+    }
+  });
+</script>
+
 {% endblock %}

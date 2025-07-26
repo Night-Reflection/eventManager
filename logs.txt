@@ -75,3 +75,220 @@
 2025-07-22 21:55:39 INFO: Databases created
 2025-07-22 21:55:40 INFO: Logger initialized
 2025-07-22 21:55:40 INFO: Databases created
+2025-07-26 18:54:09 INFO: Logger initialized
+2025-07-26 18:54:09 INFO: Databases created
+2025-07-26 18:54:10 INFO: Logger initialized
+2025-07-26 18:54:10 INFO: Databases created
+2025-07-26 19:05:45 INFO: Logger initialized
+2025-07-26 19:05:45 INFO: Databases created
+2025-07-26 19:05:45 INFO: Logger initialized
+2025-07-26 19:05:45 INFO: Databases created
+2025-07-26 19:06:45 INFO: Updating NightReflect (cs2) from 1028 ➝ 1010
+2025-07-26 19:06:45 INFO: Updating NightReflect (cs2) from 1028 ➝ 1010
+2025-07-26 19:06:46 INFO: Updating NightReflect (cs2) from 1028 ➝ 1010
+2025-07-26 19:07:26 INFO: Logger initialized
+2025-07-26 19:07:26 INFO: Databases created
+2025-07-26 19:07:26 INFO: Logger initialized
+2025-07-26 19:07:26 INFO: Databases created
+2025-07-26 19:07:40 INFO: Logger initialized
+2025-07-26 19:07:41 INFO: Databases created
+2025-07-26 19:18:18 INFO: Logger initialized
+2025-07-26 19:18:18 INFO: Databases created
+2025-07-26 19:18:19 INFO: Logger initialized
+2025-07-26 19:18:19 INFO: Databases created
+2025-07-26 19:21:06 INFO: Logger initialized
+2025-07-26 19:21:06 INFO: Databases created
+2025-07-26 19:29:42 INFO: Logger initialized
+2025-07-26 19:29:42 INFO: Databases created
+2025-07-26 19:33:46 INFO: Logger initialized
+2025-07-26 19:33:46 INFO: Databases created
+2025-07-26 19:33:47 INFO: Logger initialized
+2025-07-26 19:33:47 INFO: Databases created
+2025-07-26 19:36:01 INFO: Logger initialized
+2025-07-26 19:36:01 INFO: Databases created
+2025-07-26 19:36:13 INFO: Logger initialized
+2025-07-26 19:36:13 INFO: Databases created
+2025-07-26 19:36:37 INFO: Logger initialized
+2025-07-26 19:36:37 INFO: Databases created
+2025-07-26 19:36:39 INFO: Logger initialized
+2025-07-26 19:36:39 INFO: Databases created
+2025-07-26 19:36:47 INFO: Logger initialized
+2025-07-26 19:36:47 INFO: Databases created
+2025-07-26 19:44:59 INFO: Logger initialized
+2025-07-26 19:45:00 INFO: Databases created
+2025-07-26 19:49:42 INFO: Logger initialized
+2025-07-26 19:49:42 INFO: Databases created
+2025-07-26 19:49:45 INFO: Logger initialized
+2025-07-26 19:49:45 INFO: Databases created
+2025-07-26 19:53:49 INFO: Logger initialized
+2025-07-26 19:53:49 INFO: Databases created
+2025-07-26 19:53:50 INFO: Logger initialized
+2025-07-26 19:53:50 INFO: Databases created
+2025-07-26 19:56:47 INFO: Logger initialized
+2025-07-26 19:56:47 INFO: Databases created
+2025-07-26 19:57:52 INFO: Logger initialized
+2025-07-26 19:57:52 INFO: Databases created
+2025-07-26 20:01:20 INFO: Logger initialized
+2025-07-26 20:01:20 INFO: Databases created
+2025-07-26 20:02:15 INFO: Logger initialized
+2025-07-26 20:02:15 INFO: Databases created
+2025-07-26 20:02:18 INFO: Logger initialized
+2025-07-26 20:02:18 INFO: Databases created
+2025-07-26 20:15:12 INFO: Logger initialized
+2025-07-26 20:15:12 INFO: Databases created
+2025-07-26 20:24:41 INFO: Logger initialized
+2025-07-26 20:24:41 INFO: Databases created
+2025-07-26 20:24:52 INFO: Logger initialized
+2025-07-26 20:24:52 INFO: Databases created
+2025-07-26 20:28:52 INFO: Headers: Accept: */*
+Host: localhost:5000
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+Accept-Encoding: gzip, deflate, br, zstd
+Accept-Language: en-US,en;q=0.8
+Referer: https://literate-spoon-qw65wqwvvq93444v-5000.app.github.dev/
+X-Request-Id: 6b776130c4b23917d5ceabeaaa80f18b
+X-Real-Ip: 87.119.129.130
+X-Forwarded-Port: 443
+X-Forwarded-Scheme: https
+X-Original-Uri: /set_timezone
+X-Scheme: https
+Sec-Ch-Ua-Platform: "Windows"
+Sec-Ch-Ua: "Not)A;Brand";v="8", "Chromium";v="138", "Brave";v="138"
+Sec-Ch-Ua-Mobile: ?0
+Sec-Gpc: 1
+Sec-Fetch-Site: same-origin
+Sec-Fetch-Mode: cors
+Sec-Fetch-Dest: empty
+Priority: u=1, i
+X-Original-Proto: https
+Cookie: session=eyJ1c2VyX2lkIjoxMCwidXNlcm5hbWUiOiJ0ZXN0ZGVsZXRlIn0.aIUeYw.WIaxHTmcbIw8P79uUpMSa6OPON4
+X-Forwarded-Proto: https
+X-Forwarded-Host: literate-spoon-qw65wqwvvq93444v-5000.app.github.dev
+X-Forwarded-For: 87.119.129.130
+Origin: http://localhost:5000
+Proxy-Connection: Keep-Alive
+Content-Type: application/json
+Content-Length: 31
+
+
+2025-07-26 20:28:52 INFO: Raw data: b'{"timezone":"Europe/Ljubljana"}'
+2025-07-26 20:28:52 INFO: JSON: {'timezone': 'Europe/Ljubljana'}
+2025-07-26 20:28:52 INFO: Received timezone in POST: Europe/Ljubljana
+2025-07-26 20:31:07 INFO: Logger initialized
+2025-07-26 20:31:07 INFO: Databases created
+2025-07-26 20:31:10 INFO: Logger initialized
+2025-07-26 20:31:10 INFO: Databases created
+2025-07-26 20:32:06 INFO: Headers: Accept: */*
+Host: localhost:5000
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+Accept-Encoding: gzip, deflate, br, zstd
+Accept-Language: en-US,en;q=0.8
+Referer: https://literate-spoon-qw65wqwvvq93444v-5000.app.github.dev/
+X-Request-Id: 76c47f892324b02f9997a951c25fc316
+X-Real-Ip: 87.119.129.130
+X-Forwarded-Port: 443
+X-Forwarded-Scheme: https
+X-Original-Uri: /set_timezone
+X-Scheme: https
+Sec-Ch-Ua-Platform: "Windows"
+Sec-Ch-Ua: "Not)A;Brand";v="8", "Chromium";v="138", "Brave";v="138"
+Sec-Ch-Ua-Mobile: ?0
+Sec-Gpc: 1
+Sec-Fetch-Site: same-origin
+Sec-Fetch-Mode: cors
+Sec-Fetch-Dest: empty
+Priority: u=1, i
+X-Original-Proto: https
+Cookie: session=eyJ1c2VyX2lkIjoxMCwidXNlcm5hbWUiOiJ0ZXN0ZGVsZXRlMiJ9.aIUfJg._SJFDIU_os_5sLU-clnhOyMsP80
+X-Forwarded-Proto: https
+X-Forwarded-Host: literate-spoon-qw65wqwvvq93444v-5000.app.github.dev
+X-Forwarded-For: 87.119.129.130
+Origin: http://localhost:5000
+Proxy-Connection: Keep-Alive
+Content-Type: application/json
+Content-Length: 31
+
+
+2025-07-26 20:32:06 INFO: Raw data: b'{"timezone":"Europe/Ljubljana"}'
+2025-07-26 20:32:06 INFO: JSON: {'timezone': 'Europe/Ljubljana'}
+2025-07-26 20:32:06 INFO: Received timezone in POST: Europe/Ljubljana
+2025-07-26 20:35:13 INFO: Logger initialized
+2025-07-26 20:35:13 INFO: Databases created
+2025-07-26 20:35:16 INFO: Logger initialized
+2025-07-26 20:35:16 INFO: Databases created
+2025-07-26 20:35:33 INFO: Logger initialized
+2025-07-26 20:35:33 INFO: Databases created
+2025-07-26 20:35:38 INFO: Logger initialized
+2025-07-26 20:35:38 INFO: Databases created
+2025-07-26 20:35:53 INFO: Logger initialized
+2025-07-26 20:35:53 INFO: Databases created
+2025-07-26 20:36:04 INFO: Logger initialized
+2025-07-26 20:36:04 INFO: Databases created
+2025-07-26 20:36:06 INFO: Logger initialized
+2025-07-26 20:36:06 INFO: Databases created
+2025-07-26 20:36:17 INFO: Logger initialized
+2025-07-26 20:36:17 INFO: Databases created
+2025-07-26 20:36:19 INFO: Logger initialized
+2025-07-26 20:36:19 INFO: Databases created
+2025-07-26 20:36:26 INFO: Logger initialized
+2025-07-26 20:36:26 INFO: Databases created
+2025-07-26 20:38:05 INFO: Logger initialized
+2025-07-26 20:38:05 INFO: Databases created
+2025-07-26 20:38:19 INFO: Logger initialized
+2025-07-26 20:38:19 INFO: Databases created
+2025-07-26 20:38:24 INFO: Logger initialized
+2025-07-26 20:38:24 INFO: Databases created
+2025-07-26 20:38:34 INFO: Logger initialized
+2025-07-26 20:38:34 INFO: Databases created
+2025-07-26 20:38:43 INFO: Logger initialized
+2025-07-26 20:38:43 INFO: Databases created
+2025-07-26 20:38:48 INFO: Logger initialized
+2025-07-26 20:38:48 INFO: Databases created
+2025-07-26 20:38:56 INFO: Logger initialized
+2025-07-26 20:38:56 INFO: Databases created
+2025-07-26 20:38:59 INFO: Logger initialized
+2025-07-26 20:38:59 INFO: Databases created
+2025-07-26 20:39:04 INFO: Logger initialized
+2025-07-26 20:39:04 INFO: Databases created
+2025-07-26 20:39:12 INFO: Logger initialized
+2025-07-26 20:39:12 INFO: Databases created
+2025-07-26 20:40:16 INFO: Logger initialized
+2025-07-26 20:40:16 INFO: Databases created
+2025-07-26 20:40:18 INFO: Logger initialized
+2025-07-26 20:40:18 INFO: Databases created
+2025-07-26 20:44:00 INFO: Headers: Accept: */*
+Host: localhost:5000
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+Accept-Encoding: gzip, deflate, br, zstd
+Accept-Language: en-US,en;q=0.8
+Referer: https://literate-spoon-qw65wqwvvq93444v-5000.app.github.dev/
+X-Request-Id: 93245562f8f0eb4678588ad616f9b73a
+X-Real-Ip: 87.119.129.130
+X-Forwarded-Port: 443
+X-Forwarded-Scheme: https
+X-Original-Uri: /set_timezone
+X-Scheme: https
+Sec-Ch-Ua-Platform: "Windows"
+Sec-Ch-Ua: "Not)A;Brand";v="8", "Chromium";v="138", "Brave";v="138"
+Sec-Ch-Ua-Mobile: ?0
+Sec-Gpc: 1
+Sec-Fetch-Site: same-origin
+Sec-Fetch-Mode: cors
+Sec-Fetch-Dest: empty
+Priority: u=1, i
+X-Original-Proto: https
+Cookie: session=eyJ1c2VyX2lkIjoxMCwidXNlcm5hbWUiOiJ0ZXN0bWFpbCJ9.aIUh8A.WwMHfgMMXbXqXHlyEiuEtMPwbHg
+X-Forwarded-Proto: https
+X-Forwarded-Host: literate-spoon-qw65wqwvvq93444v-5000.app.github.dev
+X-Forwarded-For: 87.119.129.130
+Origin: http://localhost:5000
+Proxy-Connection: Keep-Alive
+Content-Type: application/json
+Content-Length: 31
+
+
+2025-07-26 20:44:00 INFO: Raw data: b'{"timezone":"Europe/Ljubljana"}'
+2025-07-26 20:44:00 INFO: JSON: {'timezone': 'Europe/Ljubljana'}
+2025-07-26 20:44:00 INFO: Received timezone in POST: Europe/Ljubljana
+2025-07-26 21:25:16 INFO: Logger initialized
+2025-07-26 21:25:16 INFO: Databases created

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="text-center">
+    <h2 class="fw-bold text-danger">Confirm Account Deletion</h2>
+    <p class="lead">Enter the 6-digit code sent to your email to confirm.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('confirm_delete_account') }}">
+        <div class="mb-3">
+            <input type="text" class="form-control text-center" name="code" maxlength="6" required placeholder="Enter code">
+        </div>
+        <button type="submit" class="btn btn-danger">Delete Account</button>
+        <a href="{{ url_for('settings') }}" class="btn btn-secondary ms-2">Cancel</a>
+    </form>
+</div>
+{% endblock %}

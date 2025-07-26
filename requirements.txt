@@ -6,3 +6,4 @@ flask-sqlalchemy
 python-dotenv
 requests
 sqlalchemy
+Pillow

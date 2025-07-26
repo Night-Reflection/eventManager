@@ -287,10 +287,15 @@
       <a class="navbar-brand" href="{{ url_for('home') }}">EventManager</a>
 
       <div class="d-flex align-items-center gap-3">
-        {% if session.get('username') %}
-        <span class="text-light me-3">Logged in as: {{ session['username'] }}</span>
+      {% if session.get('user_id') and session.get('username')%}
+      <span class="text-light me-3">Logged in as: {{ session['username'] }}</span>
+        <img 
+          src="{{ url_for('user_pfp', user_id=session['user_id']) }}" 
+          alt="Profile Picture" 
+          width="50" height="50" 
+          style="border-radius:50%; margin-left:-1em; margin-right:0.5em;">
         <a href="{{ url_for('logout') }}" class="btn btn-sm btn-outline-light" style="background-color: red;">Logout</a>
-        {% endif %}
+      {% endif %}
         <label class="theme-switch" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">
           <input type="checkbox" id="modeToggleCheckbox" class="theme-switch__checkbox" />
           <div class="theme-switch__container">

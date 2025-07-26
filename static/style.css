@@ -14,6 +14,8 @@ body.light-mode .register-container,
 body.light-mode .verify-container {
     background: white;
     box-shadow: 0 0.25em 0.5em rgba(0, 0, 0, 0.1);
+    border-radius: 1em;
+    padding: 1em;
 }
 
 body.light-mode .hour-slot {
@@ -45,6 +47,8 @@ body.dark-mode .register-container,
 body.dark-mode .verify-container {
     background: #1e1e1e;
     box-shadow: 0 0.25em 0.5em rgba(0, 0, 0, 0.7);
+    border-radius: 1em;
+    padding: 1em;
 }
 
 body.dark-mode .hour-slot {
@@ -139,9 +143,9 @@ body.dark-mode label.form-label {
 
 /* Alerts */
 body.dark-mode .alert {
-  background-color: #333;
+  background-color: rgba(7, 17, 5, 0.3);
   color: #eee;
-  border-color: #444;
+  border-color: #0d200d;
 }
 
 body.dark-mode .btn-success {

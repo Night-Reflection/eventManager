@@ -1,6 +1,6 @@
 import random
 import os
-from flask import Flask, render_template, request, session, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, session, redirect, url_for, flash, jsonify, Response
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from mailjet_rest import Client
@@ -14,11 +14,17 @@ from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 import logging
 from logging.handlers import RotatingFileHandler
 import math
+from PIL import Image, ImageDraw
+from io import BytesIO
 
 load_dotenv()
 
 log_file = "logs.txt"
 local_tz = ZoneInfo("Europe/Ljubljana")
+
+def get_default_pfp():
+    with open("static/default_pfp.png", "rb") as f:
+        return f.read()
 
 def parse_event_datetime(event_date, event_time):
     try:
@@ -118,9 +124,13 @@ def check_games_on_sale():
                             wish.last_notified_price = float(best_deal["price"])
                             db.session.commit()
             if games_on_sale:
-                game_lines = "".join(
-                    f"<li><a href='{g['url']}'>{g['title']}</a> now <b>${g['price']}</b></li>" for g in games_on_sale
-                )
+                game_lines = "".join(f"""
+                    <li style='margin-bottom: 18px; border-bottom:1px solid #eee; padding-bottom:12px;'>
+                        <a href='{g['url']}' style='text-decoration:none; color:#222; font-weight:bold; font-size:17px;'>{g['title']}</a><br>
+                        <span style='color:#4e54c8; font-size:16px;'><b>Now: ${g['price']}</b></span><br>
+                        <a href='{g['url']}' style='display:inline-block; margin-top:6px; background:#4e54c8; color:#fff; padding:7px 16px; border-radius:6px; text-decoration:none; font-size:15px;'>View Deal</a>
+                    </li>
+                """ for g in games_on_sale)
                 email_body = f"""
                 <html>
                 <body style="font-family: Arial, sans-serif; background-color:#f7f7f7; padding: 20px;">
@@ -131,14 +141,7 @@ def check_games_on_sale():
                     </div>
                     <div style="padding: 24px;">
                     <ul style="list-style:none; padding:0; margin:0;">
-                        {''.join(f"""
-                        <li style='margin-bottom: 18px; border-bottom:1px solid #eee; padding-bottom:12px;'>
-                        <a href='{g['url']}' style='text-decoration:none; color:#222; font-weight:bold; font-size:17px;'>{g['title']}</a><br>
-                        <span style='color:#4e54c8; font-size:16px;'><b>Now: ${g['price']}</b></span>
-                        <br>
-                        <a href='{g['url']}' style='display:inline-block; margin-top:6px; background:#4e54c8; color:#fff; padding:7px 16px; border-radius:6px; text-decoration:none; font-size:15px;'>View Deal</a>
-                        </li>
-                        """ for g in games_on_sale)}
+                        {game_lines}
                     </ul>
                     <p style="font-size: 13px; color: #888; margin-top: 20px;">You are receiving this notification because you wishlisted these games on EventManager.</p>
                     <div style="text-align:center; margin-top: 10px;">
@@ -195,6 +198,7 @@ class User(db.Model):
     phone_number = db.Column(db.String(255), unique=True, nullable=True)
     premium = db.Column(db.Boolean, default=False)
     timezone = db.Column(db.String(50), nullable=True)
+    pfp = db.Column(db.LargeBinary, nullable=True)
 
 class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -373,12 +377,23 @@ def terms_of_service():
 def privacy_policy():
     return render_template('privacy_policy.html')
 
+@app.route('/user_pfp/<int:user_id>')
+def user_pfp(user_id):
+    user = User.query.get(user_id)
+    if not user or not user.pfp:
+        return redirect(url_for('static', filename='default_pfp.png'))
+    
+    return Response(user.pfp, mimetype='image/png')
+
 @app.route("/")
 def home():
     session.pop('verification_code', None)
 
     if 'user_id' in session:
         user = User.query.get(session['user_id'])
+        
+        if not user.pfp:
+            user.pfp=get_default_pfp()
 
         if not user.timezone:
             print("hello")
@@ -554,7 +569,8 @@ def verify():
             new_user = User(
                 username=user_data['username'],
                 email=user_data['email'],
-                password=user_data['password']
+                password=user_data['password'],
+                pfp=get_default_pfp()
             )
             db.session.add(new_user)
             db.session.commit()
@@ -618,7 +634,7 @@ def send_verification_email(email, verification_code):
         }
         result = mailjet.send.create(data=data)
     except Exception as e:
-        logger.error(f"Error sending email: {e}")
+        logger.error(f"Error sending creation verification email: {e}")
 
 @app.route('/events', methods=['GET'])
 def events():
@@ -1325,31 +1341,103 @@ def settings():
     user = User.query.filter_by(username=session['username']).first()
 
     if request.method == 'POST':
-        new_email = request.form['email']
-        phone = request.form['phone']
+        new_email = request.form.get('email')
+        phone = request.form.get('phone')
+        uploaded_file = request.files.get('pfp')
+
+        updated = False
+
+        if uploaded_file and uploaded_file.filename != '':
+            im = Image.open(uploaded_file)
+            im = im.convert("RGBA")
+            im = im.resize((256, 256), Image.Resampling.LANCZOS)
+
+            mask = Image.new('L', im.size, 0)
+            draw = ImageDraw.Draw(mask)
+            draw.ellipse((0, 0, im.size[0], im.size[1]), fill=255)
+            im.putalpha(mask)
+
+            img_byte_arr = BytesIO()
+            im.save(img_byte_arr, format='PNG')
+            img_byte_arr = img_byte_arr.getvalue()
+
+            user.pfp = img_byte_arr
+            updated = True
+            flash("Profile picture updated successfully!", "success")
 
         if user:
             if new_email != user.email:
                 verification_code = str(random.randint(100000, 999999))
-
                 session['pending_email'] = new_email
                 session['email_verification_code'] = verification_code
-
-                send_verification_email(new_email, verification_code)
-
+                send_update_email(new_email, verification_code)
                 flash("A verification code has been sent to your new email. Please confirm to update your email.", "info")
                 return redirect(url_for('verify_email'))
 
-            user.phone_number = phone
-            db.session.commit()
+            if phone != user.phone_number:
+                user.phone_number = phone
+                updated = True
+                flash("Phone number updated successfully!", "success")
 
+        if updated:
+            db.session.commit()
             session['phone'] = phone
-            flash("Phone number updated successfully!", "success")
             return redirect(url_for('settings'))
 
-        flash("Error updating settings!", "danger")
-    
+        flash("No changes were made.", "info")
+
     return render_template('settings.html', user=user)
+
+def send_update_email(email, update_code):
+    try:
+        data = {
+            'Messages': [
+                {
+                    "From": {
+                        "Email": "lifeeventmanager666@gmail.com",
+                        "Name": "EventManager"
+                    },
+                    "To": [
+                        {
+                            "Email": email
+                        }
+                    ],
+                    "Subject": "Email Update Verification Code – EventManager",
+                    "HTMLPart": f"""
+                    <html>
+                    <body style="font-family: Arial, sans-serif; color: #333;">
+                        <div style="background-color: #f4f9ff; padding: 20px; border-radius: 8px; border: 1px solid #bee5eb;">
+                            <h2 style="color: #0d6efd; text-align: center;">Verify Your Email Address</h2>
+                            <p style="font-size: 16px; color: #555;">
+                                Dear User,<br><br>
+                                We received a request to change the email address associated with your EventManager account.
+                            </p>
+                            <p style="font-size: 16px; color: #555;">
+                                <strong>Please enter the verification code below to confirm the email update:</strong>
+                            </p>
+                            <div style="background-color: #d1ecf1; padding: 15px; font-size: 20px; font-weight: bold; text-align: center; color: #0c5460;">
+                                {update_code}
+                            </div>
+                            <p style="font-size: 16px; color: #555;">
+                                If you did not request this email change, please ignore this message or contact our support team immediately.
+                            </p>
+                            <p style="font-size: 16px; color: #555;">
+                                This code is valid for a limited time. Your account will not be updated until you confirm the new email address.
+                            </p>
+                            <footer style="text-align: center; font-size: 14px; color: #aaa; margin-top: 30px;">
+                                Best regards,<br>
+                                The EventManager Team
+                            </footer>
+                        </div>
+                    </body>
+                    </html>
+                    """
+                }
+            ]
+        }
+        result = mailjet.send.create(data=data)
+    except Exception as e:
+        logger.error(f"Error sending update verification email: {e}")
 
 @app.route('/verify-email', methods=['GET', 'POST'])
 def verify_email():
@@ -1678,6 +1766,97 @@ def unwishlist_game(cheapshark_id):
             db.session.commit()
             flash(f"{game.name} removed from your wishlist.", "info")
     return redirect(url_for('games', **request.args))
+
+def send_deletion_email(email, deletion_code):
+    try:
+        data = {
+            'Messages': [
+                {
+                    "From": {
+                        "Email": "lifeeventmanager666@gmail.com",
+                        "Name": "EventManager"
+                    },
+                    "To": [
+                        {
+                            "Email": email
+                        }
+                    ],
+                    "Subject": "Your Account Deletion Code – EventManager",
+                    "HTMLPart": f"""
+                    <html>
+                    <body style="font-family: Arial, sans-serif; color: #333;">
+                        <div style="background-color: #fff3f3; padding: 20px; border-radius: 8px; border: 1px solid #f5c2c7;">
+                            <h2 style="color: #c82333; text-align: center;">Account Deletion Request</h2>
+                            <p style="font-size: 16px; color: #555;">
+                                Dear User,<br><br>
+                                We have received a request to permanently delete your EventManager account.
+                            </p>
+                            <p style="font-size: 16px; color: #555;">
+                                <strong>Please use the confirmation code below to proceed with the deletion:</strong>
+                            </p>
+                            <div style="background-color: #f8d7da; padding: 15px; font-size: 20px; font-weight: bold; text-align: center; color: #721c24;">
+                                {deletion_code}
+                            </div>
+                            <p style="font-size: 16px; color: #555;">
+                                <strong>⚠️ WARNING:</strong> This action is <u>permanent</u> and <u>cannot be undone</u>.
+                                Once deleted, your account and all associated data will be permanently removed and cannot be recovered.
+                            </p>
+                            <p style="font-size: 16px; color: #555;">
+                                If you did not request this deletion, please contact us immediately or ignore this email to cancel the request.
+                            </p>
+                            <p style="font-size: 16px; color: #555;">
+                                Your security is important to us. We will not proceed unless this code is confirmed from your account.
+                            </p>
+                            <footer style="text-align: center; font-size: 14px; color: #aaa; margin-top: 30px;">
+                                Regards,<br>
+                                The EventManager Team
+                            </footer>
+                        </div>
+                    </body>
+                    </html>
+                    """
+                }
+            ]
+        }
+        result = mailjet.send.create(data=data)
+    except Exception as e:
+        logger.error(f"Error sending deletion verification email: {e}")
+
+@app.route('/request_delete_account', methods=['POST'])
+def request_delete_account():
+    user = User.query.filter_by(username=session['username']).first()
+
+    if not user:
+        flash("User not found.", "danger")
+        return redirect(url_for('settings'))
+
+    delete_code = str(random.randint(100000, 999999))
+    session['delete_account_code'] = delete_code
+    session['delete_account_user_id'] = user.id
+
+    send_deletion_email(user.email, delete_code)
+    flash("A confirmation code has been sent to your email. Please enter it to delete your account.", "info")
+    return redirect(url_for('confirm_delete_account'))
+
+@app.route('/confirm_delete_account', methods=['GET', 'POST'])
+def confirm_delete_account():
+    if request.method == 'POST':
+        input_code = request.form.get('code')
+        if input_code == session.get('delete_account_code'):
+            user_id = session.get('delete_account_user_id')
+            user = User.query.get(user_id)
+            if user:
+                db.session.delete(user)
+                db.session.commit()
+                session.clear()
+                flash("Your account has been permanently deleted.", "success")
+                return redirect(url_for('login'))
+            flash("User not found.", "danger")
+        else:
+            flash("Incorrect confirmation code. Please try again.", "danger")
+
+    return render_template('confirm_delete_account.html')
+
 
 if __name__ == "__main__":
     app.run(debug=True)
