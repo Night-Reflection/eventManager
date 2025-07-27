@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Submit Ticket</h2>
+
+<form method="POST" class="ticket-form">
+  <input type="text" name="title" placeholder="Title" maxlength="30" required>
+  <textarea name="message" rows="3" placeholder="Your message..." maxlength="1000" required></textarea>
+  <button type="submit">Submit</button>
+</form>
+
+<h3>Your Tickets</h3>
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+{% for ticket in tickets %}
+  <div class="ticket-box">
+    <h4>{{ ticket.title }}</h4>
+    {% for msg in ticket.messages %}
+      <p class="ticket-message">
+        <strong style='color: green;'>{{ msg.sender.username }}</strong> at <small style='color: red;'>{{ msg.timestamp|localtime(user_timezone) }}</small>: {{ msg.message }}
+      </p>
+    {% endfor %}
+
+    <form method="POST">
+      <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
+      <textarea name="message" rows="3" placeholder="Reply..." required maxlength="500"></textarea>
+      <button type="submit">Send Reply</button>
+    </form>
+  </div>
+{% endfor %}
+<style>
+body.light-mode .ticket-form,
+body.light-mode .ticket-box {
+  background-color: #ffffff;
+  color: #222;
+  border: 0.1em solid #ccc;
+  padding: 1em;
+  margin: 1em 0;
+  border-radius: 0.5em;
+  box-shadow: 0 0.3em 0.6em rgba(0, 0, 0, 0.1);
+}
+
+body.dark-mode .ticket-form,
+body.dark-mode .ticket-box {
+  background-color: #1e1e1e;
+  color: #ddd;
+  border: 0.1em solid #444;
+  padding: 1em;
+  margin: 1em 0;
+  border-radius: 0.5em;
+  box-shadow: 0 0.3em 0.6em rgba(0, 0, 0, 0.5);
+}
+
+.ticket-form input[type="text"],
+.ticket-form textarea,
+.ticket-box textarea {
+  width: 100%;
+  margin-top: 0.5em;
+  margin-bottom: 1em;
+  padding: 0.5em;
+  border-radius: 0.3em;
+  border: 0.1em solid #ccc;
+}
+
+body.dark-mode .ticket-form input[type="text"],
+body.dark-mode .ticket-form textarea,
+body.dark-mode .ticket-box textarea {
+  background-color: #2c2c2c;
+  color: #eee;
+  border: 0.1em solid #555;
+}
+
+.ticket-form button,
+.ticket-box button {
+  padding: 0.5em 1em;
+  font-weight: bold;
+  border: none;
+  border-radius: 0.3em;
+  background-color: #4caf50;
+  color: white;
+  cursor: pointer;
+}
+
+.ticket-box .btn-danger {
+  background-color: #dc3545;
+}
+
+.ticket-box .btn-warning {
+  background-color: #ffc107;
+  color: black;
+}
+
+body.dark-mode .ticket-message {
+  word-break: break-word;
+  margin-bottom: 1em;
+  border: thin solid white;
+  border-radius: 1em;
+  padding: 0.5em;
+}
+
+body.light-mode .ticket-message {
+  word-break: break-word;
+  margin-bottom: 1em;
+  border: thin solid black;
+  border-radius: 1em;
+  padding: 0.5em;
+}
+
+</style>
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    .suggestions-container {
+        max-width: 90%;
+        margin: 3rem auto;
+        padding: 0 2%;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .suggestions-header {
+        text-align: center;
+        font-size: 2.5em;
+        font-weight: 700;
+        color: #333;
+        margin-bottom: 2rem;
+    }
+
+    .card {
+        background-color: #fefefe;
+        border: 0.05rem solid #ccc;
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.05);
+        transition: transform 0.2s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-0.15rem);
+    }
+
+    .card-title-color {
+        font-size: 1.7rem;
+        font-weight: 600;
+        color: blue;
+        margin-bottom: 0.75rem;
+    }
+
+    .card-description {
+        font-size: 1.2em;
+        color: green;
+        line-height: 1.6;
+        margin-bottom: 1rem;
+    }
+
+    .card-meta {
+        font-size: 1em;
+        color: #888;
+        margin-bottom: 1rem;
+    }
+
+    .delete-form {
+        text-align: right;
+    }
+
+    .delete-btn {
+        background-color: #e74c3c;
+        color: #fff;
+        border: none;
+        padding: 0.5em 1.2em;
+        border-radius: 0.5em;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    .delete-btn:hover {
+        background-color: #c0392b;
+    }
+
+    .no-suggestions {
+        text-align: center;
+        color: #999;
+        font-size: 1.1rem;
+        margin-top: 3rem;
+    }
+
+    .alert {
+        max-width: 50rem;
+        margin: 0 auto 1rem;
+        padding: 0.75em 1em;
+        border-radius: 0.5rem;
+        background-color: #fff3cd;
+        color: #856404;
+        font-size: 0.95rem;
+    }
+</style>
+
+<div class="suggestions-container">
+    <h2 class="suggestions-header">User Suggestions</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    {% if suggestions %}
+        {% for suggestion in suggestions %}
+            <div class="card">
+                <div class="card-title-color ">{{ suggestion.title }}</div>
+                <div class="card-description">{{ suggestion.description }}</div>
+                <div class="card-meta">
+                    From: <strong>{{ suggestion.user.username }}</strong><br>
+                    On: {{ suggestion.timestamp|localtime(user_timezone) }}
+                </div>
+                <form action="{{ url_for('delete_suggestion', suggestion_id=suggestion.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this suggestion?');" style="display:inline-block;">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                </form>
+
+                <form action="{{ url_for('suggestions_admin') }}" method="POST" onsubmit="return confirm('Blacklist this user and delete all their suggestions?');" style="display:inline-block; margin-left: 0.5em;">
+                    <input type="hidden" name="blacklist_user_id" value="{{ suggestion.user.id }}">
+                    <button type="submit" class="btn btn-outline-warning btn-sm">Blacklist User</button>
+                </form>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="no-suggestions">No suggestions submitted yet.</div>
+    {% endif %}
+</div>
+
+{% endblock %}

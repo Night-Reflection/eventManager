@@ -24,6 +24,16 @@
         <a href="{{ url_for('goals') }}" class="btn btn-outline-primary btn-lg px-4">Goals</a>
         <a href="{{ url_for('games') }}" class="btn btn-outline-primary btn-lg px-4">Games</a>
         <a href="{{ url_for('settings') }}" class="btn btn-outline-primary btn-lg px-4">Settings</a>
+        {% if user.role != 'blacklisted' %}
+        <a href="{{ url_for('suggestions') }}" class="btn btn-outline-primary btn-lg px-4">Suggestions</a>
+        <a href="{{ url_for('tickets') }}" class="btn btn-outline-primary btn-lg px-4">Tickets (Support)</a>
+        {% endif %}
+        {% if user.role == 'admin' %}
+            <a href="{{ url_for('suggestions_admin') }}" class="btn btn-outline-primary btn-lg px-4">Suggestions for admin</a>
+        {% endif %}
+        {% if user.role == 'support' or user.role == 'admin' %}
+        <a href="{{ url_for('tickets_admin') }}" class="btn btn-outline-primary btn-lg px-4">Tickets for Support</a>
+        {% endif %}
     </div>
 </div>
 

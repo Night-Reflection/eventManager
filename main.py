@@ -192,13 +192,14 @@ CHEAPSHARK_API_BASE = "https://www.cheapshark.com/api/1.0"
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(50), unique=True, nullable=False)
+    username = db.Column(db.String(50), unique=False, nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     phone_number = db.Column(db.String(255), unique=True, nullable=True)
     premium = db.Column(db.Boolean, default=False)
     timezone = db.Column(db.String(50), nullable=True)
     pfp = db.Column(db.LargeBinary, nullable=True)
+    role = db.Column(db.String(50), nullable=True)
 
 class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -274,6 +275,34 @@ class WishlistedGame(db.Model):
 
     user = db.relationship('User', backref=db.backref('wishlisted_games', lazy=True))
     game = db.relationship('Game', backref=db.backref('wishlists', lazy=True))
+    
+class Suggestion(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    category = db.Column(db.String(50), nullable=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    user = db.relationship('User', backref=db.backref('suggestions', lazy=True))
+    
+class Ticket(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    user = db.relationship('User', backref='tickets')
+    messages = db.relationship('TicketMessage', backref='ticket', cascade='all, delete-orphan', passive_deletes=False, lazy=True)
+
+class TicketMessage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    ticket_id = db.Column(db.Integer, db.ForeignKey('ticket.id'), nullable=False)
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    sender = db.relationship('User')
 
 def create_tables():
     with app.app_context():
@@ -385,6 +414,16 @@ def user_pfp(user_id):
     
     return Response(user.pfp, mimetype='image/png')
 
+@app.template_filter('localtime')
+def localtime_filter(utc_dt, tz_str):
+    if not utc_dt or not tz_str:
+        return utc_dt
+    try:
+        local_dt = utc_dt.replace(tzinfo=ZoneInfo("UTC")).astimezone(ZoneInfo(tz_str))
+        return local_dt.strftime('%Y-%m-%d %H:%M')
+    except Exception:
+        return utc_dt.strftime('%Y-%m-%d %H:%M')
+
 @app.route("/")
 def home():
     session.pop('verification_code', None)
@@ -394,8 +433,11 @@ def home():
         
         if not user.pfp:
             user.pfp=get_default_pfp()
+        
+        elif not user.role:
+            user.role='user'
 
-        if not user.timezone:
+        elif not user.timezone:
             print("hello")
             return render_template("home.html", user=user)
 
@@ -533,16 +575,20 @@ def register():
         if not username or not email or not password or not confirm_password:
             flash("Missing registration fields.", "danger")
             return redirect(url_for('register'))
-        
+
         if password != confirm_password:
             flash("Passwords do not match!", "danger")
             return redirect(url_for('register'))
 
-        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-
         if User.query.filter_by(email=email).first():
             flash("This email is already registered!", "danger")
             return redirect(url_for('register'))
+
+        if User.query.filter_by(username=username).first():
+            flash("This username is already taken!", "danger")
+            return redirect(url_for('register'))
+
+        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
 
         verification_code = str(random.randint(100000, 999999))
         session['verification_code'] = verification_code
@@ -557,8 +603,6 @@ def register():
 
     return render_template("register.html")
 
-
-
 @app.route("/verify", methods=['GET', 'POST'])
 def verify():
     if request.method == 'POST':
@@ -570,7 +614,8 @@ def verify():
                 username=user_data['username'],
                 email=user_data['email'],
                 password=user_data['password'],
-                pfp=get_default_pfp()
+                pfp=get_default_pfp(),
+                role='user'
             )
             db.session.add(new_user)
             db.session.commit()
@@ -1857,6 +1902,176 @@ def confirm_delete_account():
 
     return render_template('confirm_delete_account.html')
 
+@app.route('/suggestions', methods=['GET', 'POST'])
+def suggestions():
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login'))
+
+    user = User.query.get(user_id)
+
+    if user.role == 'blacklisted':
+        flash("You are blacklisted from submitting suggestions!", "danger")
+        return redirect(url_for('home'))
+    
+    if request.method == 'POST':
+        title = request.form.get('title')
+        description = request.form.get('description')
+        category = request.form.get('category')
+
+        if not title or not description:
+            flash("Title and description are required.", "danger")
+            return redirect(url_for('suggestions'))
+
+        suggestion = Suggestion(
+            title=title,
+            description=description,
+            category=category,
+            user_id=user.id
+        )
+        db.session.add(suggestion)
+        db.session.commit()
+        flash("Suggestion submitted successfully!", "success")
+        return redirect(url_for('suggestions'))
+
+    return render_template('suggestions.html', user=user)
+
+@app.route('/suggestions_admin', methods=['GET', 'POST'])
+def suggestions_admin():
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect(url_for('login'))
+
+    user = User.query.get(user_id)
+    if not user or user.role != 'admin':
+        return redirect(url_for('home'))
+    
+    if request.method == 'POST':
+        blacklist_user_id = request.form.get('blacklist_user_id')
+        if blacklist_user_id:
+            user_to_blacklist = User.query.get(int(blacklist_user_id))
+            if user_to_blacklist:
+                user_to_blacklist.role = 'blacklisted'
+                Suggestion.query.filter_by(user_id=user_to_blacklist.id).delete()
+                db.session.commit()
+                flash(f'User {user_to_blacklist.username} has been blacklisted and their suggestions deleted.', 'success')
+            else:
+                flash('User not found.', 'danger')
+
+        return redirect(url_for('suggestions_admin'))
+
+    all_suggestions = Suggestion.query.order_by(Suggestion.timestamp.desc()).all()
+    return render_template('suggestions_admin.html', suggestions=all_suggestions, user_timezone=user.timezone)
+
+
+@app.route('/suggestion/delete/<int:suggestion_id>', methods=['POST'])
+def delete_suggestion(suggestion_id):
+    user_id = session.get('user_id')
+    user = User.query.get(user_id)
+    if not user.role == 'admin':
+        flash("Unauthorized", "danger")
+        return redirect(url_for('home'))
+
+    suggestion = Suggestion.query.get_or_404(suggestion_id)
+    db.session.delete(suggestion)
+    db.session.commit()
+    flash("Suggestion deleted successfully.", "success")
+    return redirect(url_for('suggestions_admin'))
+
+@app.route('/tickets', methods=['GET', 'POST'])
+def tickets():
+    user_id = session.get('user_id')
+    user = User.query.get(user_id)
+    if not user:
+        return redirect(url_for('login'))
+
+    if user.role == 'blacklisted':
+        flash('You are blacklisted from accessing the ticket system.', 'danger')
+        return redirect(url_for('home'))
+
+    max_tickets = 3 if user.premium else 1
+    open_tickets = Ticket.query.filter_by(user_id=user.id).count()
+
+    if request.method == 'POST':
+        if 'ticket_id' in request.form:
+            ticket_id = int(request.form['ticket_id'])
+            message = request.form['message']
+            db.session.add(TicketMessage(
+                ticket_id=ticket_id,
+                sender_id=user.id,
+                message=message
+            ))
+            db.session.commit()
+            flash('Reply sent.', 'success')
+        else:
+            if open_tickets >= max_tickets:
+                flash(f"You've reached your ticket limit ({max_tickets}).", 'warning')
+            else:
+                title = request.form['title']
+                message = request.form['message']
+                ticket = Ticket(title=title, user_id=user.id)
+                db.session.add(ticket)
+                db.session.flush()
+                initial_message = TicketMessage(
+                    ticket_id=ticket.id,
+                    sender_id=user.id,
+                    message=message
+                )
+                db.session.add(initial_message)
+                db.session.commit()
+                flash('Ticket submitted successfully.', 'success')
+        return redirect(url_for('tickets'))
+
+    user_tickets = Ticket.query.filter_by(user_id=user.id).order_by(Ticket.timestamp.desc()).all()
+    return render_template('tickets.html', tickets=user_tickets, user_timezone=user.timezone)
+
+@app.route('/tickets_admin', methods=['GET', 'POST'])
+def tickets_admin():
+    user_id = session.get('user_id')
+    if not user_id:
+        flash('Please login first!', 'warning')
+        return redirect(url_for('login'))
+
+    user = User.query.get(user_id)
+    if not user or user.role not in ['admin', 'support']:
+        flash('You are not allowed to access this!', 'danger')
+        return redirect(url_for('home'))
+
+    if request.method == 'POST':
+        if 'blacklist_user_id' in request.form:
+            uid = int(request.form['blacklist_user_id'])
+            target_user = User.query.get(uid)
+            if target_user:
+                target_user.role = 'blacklisted'
+                tickets = Ticket.query.filter_by(user_id=uid).all()
+                for ticket in tickets:
+                    db.session.delete(ticket)
+                db.session.commit()
+                flash(f'{target_user.username} has been blacklisted and their tickets deleted.', 'warning')
+        elif 'delete_ticket_id' in request.form:
+            tid = int(request.form['delete_ticket_id'])
+            ticket = Ticket.query.get(tid)
+            if ticket:
+                db.session.delete(ticket)
+            db.session.commit()
+            flash('Ticket deleted.', 'info')
+        elif 'message' in request.form:
+            ticket_id = int(request.form['ticket_id'])
+            message = request.form['message']
+            db.session.add(TicketMessage(
+                ticket_id=ticket_id,
+                sender_id=user.id,
+                message=message
+            ))
+            db.session.commit()
+            flash('Response sent.', 'success')
+        return redirect(url_for('tickets_admin'))
+
+    premium_tickets = Ticket.query.join(User).filter(User.premium == True).order_by(Ticket.timestamp.desc()).all()
+    regular_tickets = Ticket.query.join(User).filter(User.premium == False).order_by(Ticket.timestamp.desc()).all()
+    tickets = premium_tickets + regular_tickets
+
+    return render_template('tickets_admin.html', tickets=tickets, user_timezone=user.timezone)
 
 if __name__ == "__main__":
     app.run(debug=True)

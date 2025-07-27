@@ -292,3 +292,204 @@ Content-Length: 31
 2025-07-26 20:44:00 INFO: Received timezone in POST: Europe/Ljubljana
 2025-07-26 21:25:16 INFO: Logger initialized
 2025-07-26 21:25:16 INFO: Databases created
+2025-07-27 13:54:18 INFO: Logger initialized
+2025-07-27 13:54:18 INFO: Databases created
+2025-07-27 13:54:19 INFO: Logger initialized
+2025-07-27 13:54:19 INFO: Databases created
+2025-07-27 13:57:30 INFO: Logger initialized
+2025-07-27 13:57:30 INFO: Databases created
+2025-07-27 13:58:20 INFO: Logger initialized
+2025-07-27 13:58:20 INFO: Databases created
+2025-07-27 13:58:23 INFO: Logger initialized
+2025-07-27 13:58:23 INFO: Databases created
+2025-07-27 13:58:25 INFO: Logger initialized
+2025-07-27 13:58:25 INFO: Databases created
+2025-07-27 14:04:52 INFO: Logger initialized
+2025-07-27 14:04:52 INFO: Databases created
+2025-07-27 14:05:16 INFO: Logger initialized
+2025-07-27 14:05:16 INFO: Databases created
+2025-07-27 14:05:17 INFO: Logger initialized
+2025-07-27 14:05:17 INFO: Databases created
+2025-07-27 14:05:32 INFO: Logger initialized
+2025-07-27 14:05:32 INFO: Databases created
+2025-07-27 14:26:10 INFO: Logger initialized
+2025-07-27 14:26:10 INFO: Databases created
+2025-07-27 14:26:11 INFO: Logger initialized
+2025-07-27 14:26:11 INFO: Databases created
+2025-07-27 14:28:47 INFO: Logger initialized
+2025-07-27 14:28:47 INFO: Databases created
+2025-07-27 14:28:52 INFO: Logger initialized
+2025-07-27 14:28:52 INFO: Databases created
+2025-07-27 14:28:55 INFO: Logger initialized
+2025-07-27 14:28:55 INFO: Databases created
+2025-07-27 14:28:57 INFO: Logger initialized
+2025-07-27 14:28:57 INFO: Databases created
+2025-07-27 14:29:06 INFO: Logger initialized
+2025-07-27 14:29:06 INFO: Databases created
+2025-07-27 14:29:09 INFO: Logger initialized
+2025-07-27 14:29:09 INFO: Databases created
+2025-07-27 14:31:24 INFO: Logger initialized
+2025-07-27 14:31:24 INFO: Databases created
+2025-07-27 14:32:02 INFO: Logger initialized
+2025-07-27 14:32:02 INFO: Databases created
+2025-07-27 14:44:29 INFO: Logger initialized
+2025-07-27 14:44:29 INFO: Databases created
+2025-07-27 14:47:09 INFO: Logger initialized
+2025-07-27 14:47:09 INFO: Databases created
+2025-07-27 14:47:10 INFO: Logger initialized
+2025-07-27 14:47:10 INFO: Databases created
+2025-07-27 14:47:23 INFO: Logger initialized
+2025-07-27 14:47:23 INFO: Databases created
+2025-07-27 14:51:15 INFO: Logger initialized
+2025-07-27 14:51:15 INFO: Databases created
+2025-07-27 14:52:21 INFO: Logger initialized
+2025-07-27 14:52:21 INFO: Databases created
+2025-07-27 14:52:21 INFO: Logger initialized
+2025-07-27 14:52:21 INFO: Databases created
+2025-07-27 14:57:59 INFO: Logger initialized
+2025-07-27 14:57:59 INFO: Databases created
+2025-07-27 14:58:14 INFO: Logger initialized
+2025-07-27 14:58:14 INFO: Databases created
+2025-07-27 14:58:21 INFO: Logger initialized
+2025-07-27 14:58:21 INFO: Databases created
+2025-07-27 14:59:16 INFO: Logger initialized
+2025-07-27 14:59:16 INFO: Databases created
+2025-07-27 14:59:22 INFO: Logger initialized
+2025-07-27 14:59:22 INFO: Databases created
+2025-07-27 14:59:27 INFO: Logger initialized
+2025-07-27 14:59:27 INFO: Databases created
+2025-07-27 14:59:30 INFO: Logger initialized
+2025-07-27 14:59:30 INFO: Databases created
+2025-07-27 14:59:41 INFO: Logger initialized
+2025-07-27 14:59:41 INFO: Databases created
+2025-07-27 14:59:47 INFO: Logger initialized
+2025-07-27 14:59:47 INFO: Databases created
+2025-07-27 14:59:51 INFO: Logger initialized
+2025-07-27 14:59:51 INFO: Databases created
+2025-07-27 14:59:54 INFO: Logger initialized
+2025-07-27 14:59:54 INFO: Databases created
+2025-07-27 15:00:51 INFO: Logger initialized
+2025-07-27 15:00:51 INFO: Databases created
+2025-07-27 15:00:56 INFO: Logger initialized
+2025-07-27 15:00:56 INFO: Databases created
+2025-07-27 15:04:19 INFO: Logger initialized
+2025-07-27 15:04:19 INFO: Databases created
+2025-07-27 15:04:20 INFO: Logger initialized
+2025-07-27 15:04:20 INFO: Databases created
+2025-07-27 15:05:49 INFO: Logger initialized
+2025-07-27 15:05:49 INFO: Databases created
+2025-07-27 15:05:49 INFO: Logger initialized
+2025-07-27 15:05:49 INFO: Databases created
+2025-07-27 15:06:45 INFO: Logger initialized
+2025-07-27 15:06:45 INFO: Databases created
+2025-07-27 15:06:51 INFO: Logger initialized
+2025-07-27 15:06:51 INFO: Databases created
+2025-07-27 15:06:57 INFO: Logger initialized
+2025-07-27 15:06:57 INFO: Databases created
+2025-07-27 15:07:00 INFO: Logger initialized
+2025-07-27 15:07:00 INFO: Databases created
+2025-07-27 15:07:10 INFO: Logger initialized
+2025-07-27 15:07:11 INFO: Databases created
+2025-07-27 15:07:13 INFO: Logger initialized
+2025-07-27 15:07:14 INFO: Databases created
+2025-07-27 15:07:20 INFO: Logger initialized
+2025-07-27 15:07:20 INFO: Databases created
+2025-07-27 15:07:28 INFO: Logger initialized
+2025-07-27 15:07:28 INFO: Databases created
+2025-07-27 15:07:29 INFO: Logger initialized
+2025-07-27 15:07:29 INFO: Databases created
+2025-07-27 15:07:34 INFO: Logger initialized
+2025-07-27 15:07:34 INFO: Databases created
+2025-07-27 15:07:36 INFO: Logger initialized
+2025-07-27 15:07:36 INFO: Databases created
+2025-07-27 15:07:43 INFO: Logger initialized
+2025-07-27 15:07:43 INFO: Databases created
+2025-07-27 15:08:20 INFO: Logger initialized
+2025-07-27 15:08:21 INFO: Databases created
+2025-07-27 15:08:29 INFO: Logger initialized
+2025-07-27 15:08:29 INFO: Databases created
+2025-07-27 15:09:06 INFO: Logger initialized
+2025-07-27 15:09:06 INFO: Databases created
+2025-07-27 15:10:19 INFO: Logger initialized
+2025-07-27 15:10:19 INFO: Databases created
+2025-07-27 15:12:51 INFO: Logger initialized
+2025-07-27 15:12:51 INFO: Databases created
+2025-07-27 15:12:54 INFO: Logger initialized
+2025-07-27 15:12:54 INFO: Databases created
+2025-07-27 15:13:07 INFO: Logger initialized
+2025-07-27 15:13:07 INFO: Databases created
+2025-07-27 15:13:10 INFO: Logger initialized
+2025-07-27 15:13:10 INFO: Databases created
+2025-07-27 15:13:12 INFO: Logger initialized
+2025-07-27 15:13:12 INFO: Databases created
+2025-07-27 15:13:18 INFO: Logger initialized
+2025-07-27 15:13:18 INFO: Databases created
+2025-07-27 15:17:50 INFO: Logger initialized
+2025-07-27 15:19:26 INFO: Logger initialized
+2025-07-27 15:19:26 INFO: Databases created
+2025-07-27 15:19:27 INFO: Logger initialized
+2025-07-27 15:19:27 INFO: Databases created
+2025-07-27 15:21:48 INFO: Logger initialized
+2025-07-27 15:21:48 INFO: Databases created
+2025-07-27 15:21:53 INFO: Logger initialized
+2025-07-27 15:21:53 INFO: Databases created
+2025-07-27 15:21:56 INFO: Logger initialized
+2025-07-27 15:21:57 INFO: Databases created
+2025-07-27 15:22:00 INFO: Logger initialized
+2025-07-27 15:22:00 INFO: Databases created
+2025-07-27 15:22:03 INFO: Logger initialized
+2025-07-27 15:22:03 INFO: Databases created
+2025-07-27 15:22:52 INFO: Logger initialized
+2025-07-27 15:22:52 INFO: Databases created
+2025-07-27 15:22:52 INFO: Logger initialized
+2025-07-27 15:22:52 INFO: Databases created
+2025-07-27 15:26:30 INFO: Logger initialized
+2025-07-27 15:26:30 INFO: Databases created
+2025-07-27 15:26:31 INFO: Logger initialized
+2025-07-27 15:26:31 INFO: Databases created
+2025-07-27 15:52:05 INFO: Logger initialized
+2025-07-27 15:52:05 INFO: Databases created
+2025-07-27 15:59:10 INFO: Logger initialized
+2025-07-27 15:59:10 INFO: Databases created
+2025-07-27 16:03:16 INFO: Logger initialized
+2025-07-27 16:03:16 INFO: Databases created
+2025-07-27 16:03:17 INFO: Logger initialized
+2025-07-27 16:03:17 INFO: Databases created
+2025-07-27 16:04:05 INFO: Logger initialized
+2025-07-27 16:04:05 INFO: Databases created
+2025-07-27 16:04:08 INFO: Logger initialized
+2025-07-27 16:04:08 INFO: Databases created
+2025-07-27 16:05:55 INFO: Headers: Accept: */*
+Host: localhost:5000
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36
+Accept-Encoding: gzip, deflate, br, zstd
+Accept-Language: en-US,en;q=0.7
+Referer: https://literate-spoon-qw65wqwvvq93444v-5000.app.github.dev/
+X-Request-Id: 1365c30932bd3c4d18741fde8882b1f2
+X-Real-Ip: 87.119.129.130
+X-Forwarded-Port: 443
+X-Forwarded-Scheme: https
+X-Original-Uri: /set_timezone
+X-Scheme: https
+Sec-Ch-Ua-Platform: "Windows"
+Sec-Ch-Ua: "Not)A;Brand";v="8", "Chromium";v="138", "Brave";v="138"
+Sec-Ch-Ua-Mobile: ?0
+Sec-Gpc: 1
+Sec-Fetch-Site: same-origin
+Sec-Fetch-Mode: cors
+Sec-Fetch-Dest: empty
+Priority: u=1, i
+X-Original-Proto: https
+Cookie: session=eyJ1c2VyX2lkIjoxMSwidXNlcm5hbWUiOiJzdXBwb3J0IGFuZCBzdWdnZXN0aW9uIHRlc3QifQ.aIYyQg.1lLfgI1ZNFThMEglJPkUfbnp9I0
+X-Forwarded-Proto: https
+X-Forwarded-Host: literate-spoon-qw65wqwvvq93444v-5000.app.github.dev
+X-Forwarded-For: 87.119.129.130
+Origin: http://localhost:5000
+Proxy-Connection: Keep-Alive
+Content-Type: application/json
+Content-Length: 31
+
+
+2025-07-27 16:05:55 INFO: Raw data: b'{"timezone":"Europe/Ljubljana"}'
+2025-07-27 16:05:55 INFO: JSON: {'timezone': 'Europe/Ljubljana'}
+2025-07-27 16:05:55 INFO: Received timezone in POST: Europe/Ljubljana
