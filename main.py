@@ -280,9 +280,9 @@ class Suggestion(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=False)
-    category = db.Column(db.String(50), nullable=True)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    category = db.Column(db.String(50), nullable=False, default='General')
 
     user = db.relationship('User', backref=db.backref('suggestions', lazy=True))
     
@@ -291,6 +291,7 @@ class Ticket(db.Model):
     title = db.Column(db.String(100), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    category = db.Column(db.String(50), nullable=False, default='General')
     
     user = db.relationship('User', backref='tickets')
     messages = db.relationship('TicketMessage', backref='ticket', cascade='all, delete-orphan', passive_deletes=False, lazy=True)
@@ -1945,7 +1946,7 @@ def suggestions_admin():
     user = User.query.get(user_id)
     if not user or user.role != 'admin':
         return redirect(url_for('home'))
-    
+
     if request.method == 'POST':
         blacklist_user_id = request.form.get('blacklist_user_id')
         if blacklist_user_id:
@@ -1957,12 +1958,23 @@ def suggestions_admin():
                 flash(f'User {user_to_blacklist.username} has been blacklisted and their suggestions deleted.', 'success')
             else:
                 flash('User not found.', 'danger')
-
         return redirect(url_for('suggestions_admin'))
 
-    all_suggestions = Suggestion.query.order_by(Suggestion.timestamp.desc()).all()
-    return render_template('suggestions_admin.html', suggestions=all_suggestions, user_timezone=user.timezone)
+    selected_category = request.args.get('category', '')
+    categories = ["General", "Feature", "Bug", "Feedback"]
 
+    if selected_category and selected_category in categories:
+        suggestions = Suggestion.query.filter_by(category=selected_category).order_by(Suggestion.timestamp.desc()).all()
+    else:
+        suggestions = Suggestion.query.order_by(Suggestion.timestamp.desc()).all()
+
+    return render_template(
+        'suggestions_admin.html',
+        suggestions=suggestions,
+        user_timezone=user.timezone,
+        categories=categories,
+        selected_category=selected_category
+    )
 
 @app.route('/suggestion/delete/<int:suggestion_id>', methods=['POST'])
 def delete_suggestion(suggestion_id):
@@ -2009,6 +2021,7 @@ def tickets():
             else:
                 title = request.form['title']
                 message = request.form['message']
+                category = request.form.get('category', 'General')
                 ticket = Ticket(title=title, user_id=user.id)
                 db.session.add(ticket)
                 db.session.flush()
@@ -2038,40 +2051,121 @@ def tickets_admin():
         return redirect(url_for('home'))
 
     if request.method == 'POST':
-        if 'blacklist_user_id' in request.form:
-            uid = int(request.form['blacklist_user_id'])
-            target_user = User.query.get(uid)
+        action = request.form.get('action')
+        ticket_id = request.form.get('ticket_id')
+
+        if action in ['delete', 'blacklist', 'send'] and not ticket_id:
+            flash('Missing ticket ID.', 'danger')
+            return redirect(url_for('tickets_admin'))
+
+        ticket = Ticket.query.get(int(ticket_id)) if ticket_id else None
+
+        if action == 'blacklist' and ticket:
+            target_user = User.query.get(ticket.user_id)
             if target_user:
+                # Delete all messages and tickets for this user
+                all_tickets = Ticket.query.filter_by(user_id=target_user.id).all()
+                for t in all_tickets:
+                    TicketMessage.query.filter_by(ticket_id=t.id).delete()
+                    db.session.delete(t)
+
+                # Blacklist the user
                 target_user.role = 'blacklisted'
-                tickets = Ticket.query.filter_by(user_id=uid).all()
-                for ticket in tickets:
-                    db.session.delete(ticket)
                 db.session.commit()
-                flash(f'{target_user.username} has been blacklisted and their tickets deleted.', 'warning')
-        elif 'delete_ticket_id' in request.form:
-            tid = int(request.form['delete_ticket_id'])
-            ticket = Ticket.query.get(tid)
-            if ticket:
-                db.session.delete(ticket)
+                flash(f"{target_user.username} has been blacklisted and their tickets deleted.", 'warning')
+            else:
+                flash("User not found.", 'danger')
+
+        elif action == 'delete' and ticket:
+            TicketMessage.query.filter_by(ticket_id=ticket.id).delete()
+            db.session.delete(ticket)
             db.session.commit()
-            flash('Ticket deleted.', 'info')
-        elif 'message' in request.form:
-            ticket_id = int(request.form['ticket_id'])
-            message = request.form['message']
-            db.session.add(TicketMessage(
-                ticket_id=ticket_id,
-                sender_id=user.id,
-                message=message
-            ))
-            db.session.commit()
-            flash('Response sent.', 'success')
+            flash("Ticket deleted.", 'info')
+
+        elif action == 'send' and ticket:
+            message = request.form.get('message', '').strip()
+            if message:
+                new_message = TicketMessage(
+                    ticket_id=ticket.id,
+                    sender_id=user.id,
+                    message=message
+                )
+                db.session.add(new_message)
+                db.session.commit()
+                flash("Response sent.", 'success')
+            else:
+                flash("Cannot send a blank message.", 'warning')
+
         return redirect(url_for('tickets_admin'))
 
-    premium_tickets = Ticket.query.join(User).filter(User.premium == True).order_by(Ticket.timestamp.desc()).all()
-    regular_tickets = Ticket.query.join(User).filter(User.premium == False).order_by(Ticket.timestamp.desc()).all()
-    tickets = premium_tickets + regular_tickets
+    # --- Handle Search and Filters ---
+    search_query = request.args.get('search', '').strip()
+    category_filter = request.args.get('category', '').strip()
+    tickets_query = Ticket.query.join(User)
 
-    return render_template('tickets_admin.html', tickets=tickets, user_timezone=user.timezone)
+    if category_filter:
+        tickets_query = tickets_query.filter(Ticket.category == category_filter)
+
+    if search_query:
+        if search_query.isdigit():
+            ticket = tickets_query.filter(Ticket.id == int(search_query)).first()
+            tickets = [ticket] if ticket else []
+        else:
+            matched_users = User.query.filter(User.username.ilike(f'%{search_query}%')).all()
+            user_ids = [u.id for u in matched_users]
+            tickets = tickets_query.filter(Ticket.user_id.in_(user_ids)).order_by(Ticket.timestamp.desc()).all()
+    else:
+        premium_tickets = tickets_query.filter(User.premium == True).order_by(Ticket.timestamp.desc()).all()
+        regular_tickets = tickets_query.filter(User.premium == False).order_by(Ticket.timestamp.desc()).all()
+        tickets = premium_tickets + regular_tickets
+
+    categories = ['General', 'Billing', 'Technical']
+    return render_template('tickets_admin.html',
+                           tickets=tickets,
+                           user=user,
+                           categories=categories,
+                           selected_category=category_filter)
+
+
+
+@app.route('/ticket/<int:ticket_id>', methods=['GET', 'POST'])
+def view_ticket(ticket_id):
+    user_id = session.get('user_id')
+    user = User.query.get(user_id)
+
+    if not user or user.role not in ['admin', 'support']:
+        flash('Unauthorized access', 'danger')
+        return redirect(url_for('home'))
+
+    ticket = Ticket.query.get_or_404(ticket_id)
+
+    if request.method == 'POST':
+        if 'message' in request.form:
+            message = request.form['message']
+            new_msg = TicketMessage(
+                ticket_id=ticket.id,
+                sender_id=user.id,
+                message=message
+            )
+            db.session.add(new_msg)
+            db.session.commit()
+            flash('Response sent.', 'success')
+            return redirect(url_for('view_ticket', ticket_id=ticket.id))
+
+        elif 'delete_ticket_id' in request.form:
+            db.session.delete(ticket)
+            db.session.commit()
+            flash('Ticket deleted.', 'info')
+            return redirect(url_for('tickets_admin'))
+
+        elif 'blacklist_user_id' in request.form:
+            target_user = ticket.user
+            target_user.role = 'blacklisted'
+            db.session.commit()
+            flash('User blacklisted.', 'danger')
+            return redirect(url_for('tickets_admin'))
+
+    return render_template('ticket_detail.html', ticket=ticket, user=user)
 
 if __name__ == "__main__":
     app.run(debug=True)

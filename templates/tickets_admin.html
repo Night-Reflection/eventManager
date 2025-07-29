@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>All Tickets</h2>
+<h2>Admin Ticket Panel</h2>
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
     {% for category, message in messages %}
@@ -8,110 +8,111 @@
     {% endfor %}
   {% endif %}
 {% endwith %}
-
-{% for ticket in tickets %}
-  <div class="ticket-box">
-    <h4>{{ ticket.title }} — by {{ ticket.user.username }} ({{ 'Premium' if ticket.user.premium else 'Regular' }})</h4>
-
-    {% for msg in ticket.messages %}
-      <p class="ticket-message">
-        <strong style='color: green;'>{{ msg.sender.username }}</strong> at <small style='color: red;'>{{ msg.timestamp|localtime(user_timezone) }}</small>: {{ msg.message }}
-      </p>
+<form method="GET" style="margin-bottom: 1em;">
+  <input type="text" name="search" placeholder="Search by Ticket ID or Username" value="{{ request.args.get('search', '') }}">
+  
+  <select name="category">
+    <option value="">All Categories</option>
+    {% for cat in categories %}
+      <option value="{{ cat }}" {% if cat == selected_category %}selected{% endif %}>{{ cat }}</option>
     {% endfor %}
+  </select>
 
-    <form method="POST">
-      <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
-      <textarea name="message" rows="3" placeholder="Respond..." required></textarea>
-      <button type="submit">Send Response</button>
-    </form>
+  <button type="submit">Search / Filter</button>
+</form>
 
-    <form method="POST" onsubmit="return confirm('Delete this ticket?');">
-      <input type="hidden" name="delete_ticket_id" value="{{ ticket.id }}">
-      <button type="submit" class="btn btn-warning btn-sm">Delete Ticket</button>
-    </form>
+{% if tickets %}
+  {% for ticket in tickets %}
+    <div class="ticket-box">
+      <a class="toggle-btn" href="{{ url_for('view_ticket', ticket_id=ticket.id) }}" target="_blank">
+        Ticket #{{ ticket.id }} — {{ ticket.title }} by {{ ticket.user.username }}
+      </a>
+    </div>
+  {% endfor %}
+{% else %}
+  <div class="no-tickets">No tickets submitted yet.</div>
+{% endif %}
 
-    <form method="POST" onsubmit="return confirm('Blacklist this user and delete all their tickets?');">
-      <input type="hidden" name="blacklist_user_id" value="{{ ticket.user.id }}">
-      <button type="submit" class="btn btn-danger btn-sm">Blacklist User</button>
-    </form>
-  </div>
-{% endfor %}
 <style>
-body.light-mode .ticket-form,
-body.light-mode .ticket-box {
-  background-color: #ffffff;
-  color: #222;
-  border: 0.1em solid #ccc;
-  padding: 1em;
-  margin: 1em 0;
-  border-radius: 0.5em;
-  box-shadow: 0 0.3em 0.6em rgba(0, 0, 0, 0.1);
+.no-tickets {
+  text-align: center;
+  color: #999;
+  font-size: 1.1rem;
+  margin-top: 3rem;
 }
 
-body.dark-mode .ticket-form,
-body.dark-mode .ticket-box {
-  background-color: #1e1e1e;
-  color: #ddd;
-  border: 0.1em solid #444;
-  padding: 1em;
-  margin: 1em 0;
-  border-radius: 0.5em;
-  box-shadow: 0 0.3em 0.6em rgba(0, 0, 0, 0.5);
-}
-
-.ticket-form input[type="text"],
-.ticket-form textarea,
-.ticket-box textarea {
-  width: 100%;
-  margin-top: 0.5em;
+.ticket-message {
+  white-space: pre-wrap;
+  word-break: break-word;
   margin-bottom: 1em;
+  border: thin solid #999;
+  border-radius: 1em;
   padding: 0.5em;
-  border-radius: 0.3em;
-  border: 0.1em solid #ccc;
 }
 
-body.dark-mode .ticket-form input[type="text"],
-body.dark-mode .ticket-form textarea,
-body.dark-mode .ticket-box textarea {
-  background-color: #2c2c2c;
-  color: #eee;
-  border: 0.1em solid #555;
+.ticket-box {
+  margin-bottom: 1.5em;
+  padding: 1em;
+  border-radius: 1em;
+  background: var(--bg);
+  color: var(--text);
+  border: thin solid var(--border);
 }
 
-.ticket-form button,
-.ticket-box button {
-  padding: 0.5em 1em;
+.toggle-btn {
   font-weight: bold;
+  margin-bottom: 0.5em;
+  cursor: pointer;
+  background: #4caf50;
+  color: white;
   border: none;
   border-radius: 0.3em;
-  background-color: #4caf50;
-  color: white;
-  cursor: pointer;
+  padding: 0.5em 1em;
 }
 
-.ticket-box .btn-danger {
-  background-color: #dc3545;
+a {
+  text-decoration: none;
 }
 
-.ticket-box .btn-warning {
-  background-color: #ffc107;
-  color: black;
+body.light-mode {
+  --bg: #fff;
+  --text: #222;
+  --border: #ccc;
 }
 
-body.dark-mode .ticket-message {
-  word-break: break-word;
-  margin-bottom: 1em;
-  border: thin solid green;
-  border-radius: 1em;
-  padding: 0.5em;
+body.dark-mode {
+  --bg: #1e1e1e;
+  --text: #eee;
+  --border: #555;
 }
 
-body.light-mode .ticket-message {
-  word-break: break-word;
-  margin-bottom: 1em;
-  border: thin solid white;
-  border-radius: 1em;
-  padding: 0.5em;
+form select[name="category"] {
+  padding: 0.4em 0.6em;
+  border: 1px solid #ccc;
+  border-radius: 0.3em;
+  background-color: #fff;
+  color: #333;
+  font-size: 1em;
+  margin-left: 0.5em;
+  vertical-align: middle;
+  transition: border-color 0.3s ease;
+}
+
+form select[name="category"]:focus {
+  border-color: #4caf50;
+  outline: none;
+  box-shadow: 0 0 3px #4caf50;
+}
+
+body.dark-mode form select[name="category"] {
+  background-color: #2c2c2c;
+  color: #eee;
+  border: 1px solid #555;
+}
+
+body.dark-mode form select[name="category"]:focus {
+  border-color: #80c080;
+  box-shadow: 0 0 5px #80c080;
 }
 
 </style>

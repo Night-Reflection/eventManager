@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+<div class="ticket-box">
+  <h2>Ticket #{{ ticket.id }} — {{ ticket.title }}</h2>
+  <p><strong>User:</strong> {{ ticket.user.username }} ({{ 'Premium' if ticket.user.premium else 'Regular' }})</p>
+
+  {% for msg in ticket.messages %}
+    <div class="ticket-message">
+      <strong style="color: green;">{{ msg.sender.username }}</strong>
+      at <small style="color: red;">{{ msg.timestamp|localtime(user.timezone) }}</small>: {{ msg.message }}
+    </div>
+  {% endfor %}
+</div>
+
+<div class="ticket-form">
+
+    <form method="POST">
+      <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
+      <textarea name="message" rows="3" placeholder="Respond..." required></textarea>
+      <button type="submit" class="btn btn-success btn-sm">Send Response</button>
+    </form>
+
+    <form method="POST" onsubmit="return confirm('Delete this ticket?');">
+      <input type="hidden" name="delete_ticket_id" value="{{ ticket.id }}">
+      <button type="submit" class="btn btn-warning btn-sm">Delete Ticket</button>
+    </form>
+
+    <form method="POST" onsubmit="return confirm('Blacklist this user and delete all their tickets?');">
+      <input type="hidden" name="blacklist_user_id" value="{{ ticket.user.id }}">
+      <button type="submit" class="btn btn-danger btn-sm">Blacklist User</button>
+    </form>
+
+</div>
+
+
+<script>
+  function confirmIfNeeded(event) {
+    const action = event.submitter.value;
+    if (action === 'delete' || action === 'blacklist') {
+      return confirm("Are you sure?");
+    }
+    return true;
+  }
+</script>
+
+<style>
+.ticket-message {
+  word-break: break-word;
+  margin-bottom: 1em;
+  border: thin solid #999;
+  border-radius: 1em;
+  padding: 0.5em;
+}
+
+body.light-mode .ticket-form,
+body.light-mode .ticket-box {
+  background-color: #ffffff;
+  color: #222;
+  border: 0.1em solid #ccc;
+  padding: 1em;
+  margin: 1em 0;
+  border-radius: 0.5em;
+  box-shadow: 0 0.3em 0.6em rgba(0, 0, 0, 0.1);
+}
+
+body.dark-mode .ticket-form,
+body.dark-mode .ticket-box {
+  background-color: #1e1e1e;
+  color: #ddd;
+  border: 0.1em solid #444;
+  padding: 1em;
+  margin: 1em 0;
+  border-radius: 0.5em;
+  box-shadow: 0 0.3em 0.6em rgba(0, 0, 0, 0.5);
+}
+
+.ticket-form textarea {
+  width: 100%;
+  margin-top: 0.5em;
+  margin-bottom: 1em;
+  padding: 0.5em;
+  border-radius: 0.3em;
+  border: 0.1em solid #ccc;
+}
+
+body.dark-mode .ticket-form textarea {
+  background-color: #2c2c2c;
+  color: #eee;
+  border: 0.1em solid #555;
+}
+
+body.dark-mode .ticket-message {
+  border: thin solid green;
+}
+
+body.light-mode .ticket-message {
+  border: thin solid white;
+}
+</style>
+{% endblock %}
