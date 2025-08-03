@@ -16,6 +16,7 @@ from logging.handlers import RotatingFileHandler
 import math
 from PIL import Image, ImageDraw
 from io import BytesIO
+from sqlalchemy import or_
 
 load_dotenv()
 
@@ -2063,13 +2064,11 @@ def tickets_admin():
         if action == 'blacklist' and ticket:
             target_user = User.query.get(ticket.user_id)
             if target_user:
-                # Delete all messages and tickets for this user
                 all_tickets = Ticket.query.filter_by(user_id=target_user.id).all()
                 for t in all_tickets:
                     TicketMessage.query.filter_by(ticket_id=t.id).delete()
                     db.session.delete(t)
 
-                # Blacklist the user
                 target_user.role = 'blacklisted'
                 db.session.commit()
                 flash(f"{target_user.username} has been blacklisted and their tickets deleted.", 'warning')
@@ -2098,7 +2097,6 @@ def tickets_admin():
 
         return redirect(url_for('tickets_admin'))
 
-    # --- Handle Search and Filters ---
     search_query = request.args.get('search', '').strip()
     category_filter = request.args.get('category', '').strip()
     tickets_query = Ticket.query.join(User)
@@ -2166,6 +2164,97 @@ def view_ticket(ticket_id):
             return redirect(url_for('tickets_admin'))
 
     return render_template('ticket_detail.html', ticket=ticket, user=user)
+
+@app.route('/all_users', methods=['GET', 'POST'])
+def all_users():
+    user_id = session.get('user_id')
+    if not user_id:
+        flash("Please login first!", "warning")
+        return redirect(url_for('login'))
+
+    current_user = User.query.get(user_id)
+    if not current_user or current_user.role not in ['admin', 'support']:
+        flash("You are not authorized to view this page.", "danger")
+        return redirect(url_for('home'))
+
+    if request.method == 'POST':
+        if 'delete_user_id' in request.form:
+            uid = int(request.form['delete_user_id'])
+            user = User.query.get(uid)
+            if user:
+                TicketMessage.query.filter_by(sender_id=uid).delete()
+                Ticket.query.filter_by(user_id=uid).delete()
+                Suggestion.query.filter_by(user_id=uid).delete()
+                db.session.delete(user)
+                db.session.commit()
+                flash(f"Deleted user {user.username} and all related data.", "danger")
+            return redirect(url_for('all_users'))
+
+        elif 'change_role_user_id' in request.form:
+            uid = int(request.form['change_role_user_id'])
+            new_role = request.form['new_role']
+            user = User.query.get(uid)
+            if user:
+                user.role = new_role
+                db.session.commit()
+                flash(f"Updated role for {user.username} to {new_role}.", "info")
+            return redirect(url_for('all_users'))
+        
+    search = request.args.get('search', '').strip()
+    search_by = request.args.get('search_by', 'username')
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+
+    query = User.query
+
+    if search:
+        if search_by == 'id':
+            if search.isdigit():
+                query = query.filter(User.id == int(search))
+            else:
+                query = query.filter(False)
+        elif search_by == 'email':
+            query = query.filter(User.email.ilike(f"%{search}%"))
+        else:
+            query = query.filter(User.username.ilike(f"%{search}%"))
+
+    pagination = query.order_by(User.id.asc()).paginate(page=page, per_page=per_page)
+    users = pagination.items
+
+    return render_template(
+        'all_users.html',
+        users=users,
+        pagination=pagination,
+        search=search,
+        search_by=search_by
+    )
+
+@app.route('/delete_user', methods=['POST'])
+def delete_user():
+    user_id = request.form.get('user_id')
+    if not user_id:
+        flash("No user specified.", "danger")
+        return redirect(url_for('all_users'))
+
+    user = User.query.get(int(user_id))
+    if user:
+        Ticket.query.filter_by(user_id=user.id).delete()
+        Suggestion.query.filter_by(user_id=user.id).delete()
+        Goal.query.filter_by(user_id=user.id).delete()
+        Event.query.filter_by(user_id=user.id).delete()
+        FollowedTeam.query.filter_by(user_id=user.id).delete()
+        FollowedSportsTeam.query.filter_by(user_id=user.id).delete()
+        WishlistedGame.query.filter_by(user_id=user.id).delete()
+
+        db.session.delete(user)
+        db.session.commit()
+        flash(f"User {user.username} and all related data deleted.", "info")
+    else:
+        flash("User not found.", "warning")
+
+    return redirect(url_for('all_users'))
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)

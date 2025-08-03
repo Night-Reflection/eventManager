@@ -30,6 +30,7 @@
         {% endif %}
         {% if user.role == 'admin' %}
             <a href="{{ url_for('suggestions_admin') }}" class="btn btn-outline-primary btn-lg px-4">Suggestions for admin</a>
+            <a href="{{ url_for('all_users') }}" class="btn btn-outline-primary btn-lg px-4">All users</a>
         {% endif %}
         {% if user.role == 'support' or user.role == 'admin' %}
         <a href="{{ url_for('tickets_admin') }}" class="btn btn-outline-primary btn-lg px-4">Tickets for Support</a>
