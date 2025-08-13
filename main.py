@@ -28,10 +28,14 @@ def get_default_pfp():
         return f.read()
 
 def parse_event_datetime(event_date, event_time):
-    try:
-        return datetime.strptime(f"{event_date} {event_time}", "%Y-%m-%d %H:%M:%S").replace(tzinfo=local_tz)
-    except ValueError:
-        return datetime.strptime(f"{event_date} {event_time}", "%Y-%m-%d %H:%M").replace(tzinfo=local_tz)
+    if len(event_time.split(':')) == 2:
+        fmt = "%Y-%m-%d %H:%M"
+    elif len(event_time.split(':')) == 3:
+        fmt = "%Y-%m-%d %H:%M:%S"
+    else:
+        raise ValueError(f"Unexpected time format: {event_time}")
+
+    return datetime.strptime(f"{event_date} {event_time}", fmt).replace(tzinfo=local_tz)
 
 def custom_time(secs):
     utc_dt = datetime.fromtimestamp(secs, tz=timezone.utc)
@@ -168,7 +172,6 @@ def check_games_on_sale():
                 }
                 try:
                     mailjet.send.create(data=data)
-                    logger.info(f"Sale notification sent to {user.email}")
                 except Exception as e:
                     logger.error(f"Failed to send sale email to {user.email}: {e}")
 
@@ -212,6 +215,7 @@ class Event(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     notification_enabled = db.Column(db.Boolean, default=False)
     reminder_time = db.Column(db.Integer, nullable=True)
+    importance = db.Column(db.String(10), default="normal")
 
     user = db.relationship('User', backref=db.backref('events', lazy=True))
 
@@ -368,13 +372,11 @@ def schedule_notification(event, reminder_minutes):
             }
             try:
                 result = mailjet.send.create(data=data)
-                logger.info(f"Mailjet Response: {result.status_code}, {result.json()}")
             except Exception as e:
                 logger.error(f"Failed to send email for event ID {event.id}: {e}")
 
     trigger = DateTrigger(run_date=reminder_time_utc)
     scheduler.add_job(send_notification_email, trigger=trigger)
-    logger.info(f"Scheduled notification for event '{event.title}' at {reminder_time_utc} UTC")
 
 @app.route("/get_timezone_status")
 def get_timezone_status():
@@ -385,15 +387,9 @@ def get_timezone_status():
     
 @app.route("/set_timezone", methods=["POST"])
 def set_timezone():
-    print("hello")
-    logger.info(f"Headers: {request.headers}")
-    logger.info(f"Raw data: {request.data}")
-    logger.info(f"JSON: {request.get_json()}")
-    
     if 'user_id' in session:
         user = User.query.get(session['user_id'])
         user_timezone = request.json.get("timezone")
-        logger.info(f"Received timezone in POST: {user_timezone}")
         if user_timezone:
             user.timezone = user_timezone
             db.session.commit()
@@ -762,7 +758,8 @@ def events():
                 'date': event_datetime.strftime('%Y-%m-%d'),
                 'time': event_datetime.strftime('%H:%M'),
                 'description': event.description,
-                'location': event.location
+                'location': event.location,
+                'importance': event.importance
             })
 
         current_day_obj = {
@@ -832,7 +829,8 @@ def events():
                     'date': event_datetime.strftime('%Y-%m-%d'),
                     'time': event_datetime.strftime('%H:%M'),
                     'description': event.description,
-                    'location': event.location
+                    'location': event.location,
+                    'importance': event.importance
                 })
 
             week_days.append({
@@ -884,9 +882,11 @@ def edit_event(event_id):
         try:
             event.title = request.form['event_title']
             event.date = request.form['event_date']
-            event.time = request.form['event_time'] + ":00"
+            event.time = request.form['event_time']
             event.description = request.form.get('event_description')
             event.location = request.form.get('event_location')
+            
+            event.importance = request.form.get('importance', 'normal')
 
             notification_enabled = request.form.get('notification_enabled') == 'on'
             reminder_time = int(request.form.get('reminder_time', 0)) if notification_enabled else None
@@ -927,9 +927,10 @@ def Create_Event():
         try:
             event_title = request.form['event_title']
             event_date = request.form['event_date']
-            event_time = request.form['event_time'] + ":00"
+            event_time = request.form['event_time']
             event_description = request.form.get('event_description')
             event_location = request.form.get('event_location')
+            importance = request.form.get('importance', 'normal')
             notification_enabled = request.form.get('notification_enabled') == 'on'
             reminder_time = int(request.form.get('reminder_time', 0)) if notification_enabled else None
 
@@ -945,7 +946,8 @@ def Create_Event():
                 location=event_location,
                 user_id=session['user_id'],
                 notification_enabled=notification_enabled,
-                reminder_time=reminder_time
+                reminder_time=reminder_time,
+                importance=importance
             )
             db.session.add(new_event)
             db.session.commit()
@@ -964,7 +966,6 @@ def Create_Event():
             logger.error(f"Error in Create_Event: {e}")
 
     return render_template('calendar.html')
-
 
 @app.route('/E-sports', methods=['GET', 'POST'])
 def Esports():
@@ -1058,25 +1059,60 @@ def unfollow():
 @app.route('/team/<int:team_id>', methods=['GET', 'POST'])
 def team_detail(team_id):
     headers = {'Authorization': f'Bearer {PANDASCORE_API_KEY}'}
-    
+
     team_resp = requests.get(f'https://api.pandascore.co/teams/{team_id}', headers=headers)
     if team_resp.status_code != 200:
         flash('Could not load team data.', 'danger')
         return redirect(url_for('Esports'))
-    
     team = team_resp.json()
 
-    thirty_days_ago = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
-    match_resp = requests.get(
-        f'https://api.pandascore.co/teams/{team_id}/matches',
+    past_matches_resp = requests.get(
+        'https://api.pandascore.co/matches/past',
         headers=headers,
-        params={'sort': '-begin_at', 'per_page': 5, 'filter[begin_at]': f'>{thirty_days_ago}'}
+        params={
+            'filter[opponent_id]': team_id,
+            'sort': '-begin_at',
+            'per_page': 20
+        }
     )
-    matches = match_resp.json() if match_resp.status_code == 200 else []
+    recent_matches_raw = past_matches_resp.json() if past_matches_resp.status_code == 200 else []
+
+    recent_matches = []
+    for match in recent_matches_raw:
+        begin_at = match.get('begin_at')
+        if begin_at:
+            dt = datetime.fromisoformat(begin_at.replace('Z', '+00:00'))
+            match['begin_at_str'] = dt.strftime('%Y-%m-%d')
+            recent_matches.append(match)
+
+        if len(recent_matches) >= 5:
+            break
+
+    upcoming_matches_resp = requests.get(
+        'https://api.pandascore.co/matches/upcoming',
+        headers=headers,
+        params={
+            'filter[opponent_id]': team_id,
+            'sort': 'begin_at',
+            'per_page': 5
+        }
+    )
+    upcoming_matches_raw = upcoming_matches_resp.json() if upcoming_matches_resp.status_code == 200 else []
+
+    upcoming_matches = []
+    for match in upcoming_matches_raw:
+        begin_at = match.get('begin_at')
+        if begin_at:
+            dt = datetime.fromisoformat(begin_at.replace('Z', '+00:00'))
+            match['begin_at_str'] = dt.strftime('%Y-%m-%d')
+        else:
+            match['begin_at_str'] = 'Date Unknown'
+        upcoming_matches.append(match)
 
     is_following = False
     follow_limit_reached = False
     followed_teams_count = 0
+
     if 'user_id' in session:
         user = User.query.get(session['user_id'])
         followed_teams_count = FollowedTeam.query.filter_by(user_id=user.id).count()
@@ -1092,23 +1128,28 @@ def team_detail(team_id):
                 db.session.delete(follow_record)
                 db.session.commit()
                 flash(f'You have unfollowed {team["name"]}.', 'success')
-                return redirect(url_for('team_detail', team_id=team_id))
             elif not follow_limit_reached:
                 if not local_team:
-                    local_team = Team(name=team['name'], external_id=team_id, game=team['current_videogame']['name'])
+                    local_team = Team(
+                        name=team['name'],
+                        external_id=team_id,
+                        game=team['current_videogame']['name'] if team.get('current_videogame') else 'Unknown'
+                    )
                     db.session.add(local_team)
                     db.session.commit()
                 db.session.add(FollowedTeam(user_id=user.id, team_id=local_team.id))
                 db.session.commit()
                 flash(f'You are now following {team["name"]}.', 'success')
-                return redirect(url_for('team_detail', team_id=team_id))
             else:
                 flash('Follow limit reached. Upgrade to premium to follow more teams.', 'warning')
+            
+            return redirect(url_for('team_detail', team_id=team_id))
 
     return render_template(
-        'team_detail.html', 
-        team=team, 
-        matches=matches,
+        'team_detail.html',
+        team=team,
+        recent_matches=recent_matches,
+        upcoming_matches=upcoming_matches,
         is_following=is_following,
         follow_limit_reached=follow_limit_reached,
         followed_teams_count=followed_teams_count
@@ -2253,8 +2294,6 @@ def delete_user():
         flash("User not found.", "warning")
 
     return redirect(url_for('all_users'))
-
-
 
 if __name__ == "__main__":
     app.run(debug=True)

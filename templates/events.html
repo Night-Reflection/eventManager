@@ -61,7 +61,7 @@
                         {% for event in day.events %}
                             {% set event_hour = event.time.split(":")[0]|int %}
                             {% if event_hour == hour %}
-                            <div class="event" onclick="showEventModal('{{ event.id }}')">
+                            <div class="event importance-{{ event.importance|lower }}" onclick="showEventModal('{{ event.id }}')">
                                 <span>{{ event.title }} ({{ event.time }})</span>
                             </div>
                             {% endif %}
@@ -84,7 +84,7 @@
             {% for event in current_day.events %}
                 {% set event_hour = event.time.split(":")[0]|int %}
                 {% if event_hour == hour %}
-                <div class="event" onclick="showEventModal('{{ event.id }}')">
+                <div class="event importance-{{ event.importance|lower }}" onclick="showEventModal('{{ event.id }}')">
                     <span>{{ event.title }} ({{ event.time }})</span>
                 </div>
                 {% endif %}
@@ -244,11 +244,31 @@ body.dark-mode {
 #search-suggestions {
     max-height: 12em;
     overflow-y: auto;
-    z-index: 1050;
+    z-index: 1055;
     background-color: var(--bg-color);
     color: var(--text-color);
     border: 1px solid var(--border-color);
 }
+
+.event.importance-low {
+    background-color: var(--event-bg);
+    opacity: 0.6;
+}
+
+.event.importance-normal {
+    background-color: var(--event-bg);
+}
+
+.event.importance-high {
+    background-color: #dc3545;
+    color: white;
+}
+
+body.dark-mode .event.importance-high {
+    background-color: #ff4d4d;
+    color: white;
+}
+
 
 @media (max-width: 768px) {
     .calendar-week {

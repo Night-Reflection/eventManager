@@ -1,38 +1,73 @@
-{% extends "base.html" %} {% block content %} {% with messages = get_flashed_messages(with_categories=true) %} {% if messages %} {% for category, message in messages %} <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-  {{ message }}
-  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-</div> {% endfor %} {% endif %} {% endwith %} <div class="text-center">
+{% extends "base.html" %}
+
+{% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<div class="text-center">
   <h2 class="fw-bold">Your Personal Event Creator</h2>
   <p class="lead">Add events to your calendar</p>
   <div id="calendar" class="mb-4"></div>
+
   <form method="POST" action="{{ url_for('edit_event', event_id=event.id) if event else url_for('Create_Event') }}">
     <div class="mb-3">
       <label for="event_title" class="form-label">Event Title</label>
-      <input type="text" class="form-control" id="event_title" name="event_title" value="{{ event.title if event else '' }}" required>
+      <input type="text" class="form-control" id="event_title" name="event_title"
+             value="{{ event.title if event else '' }}" required>
     </div>
+
     <div class="mb-3">
       <label for="event_date" class="form-label">Event Date</label>
-      <input type="date" class="form-control" id="event_date" name="event_date" value="{{ event.date if event else '' }}" required>
+      <input type="date" class="form-control" id="event_date" name="event_date"
+             value="{{ event.date if event else '' }}" required>
     </div>
+
     <div class="mb-3">
       <label for="event_time" class="form-label">Event Time</label>
-      <input type="time" class="form-control" id="event_time" name="event_time" value="{{ event.time if event else '' }}" required>
+      <input type="time" class="form-control" id="event_time" name="event_time"
+             value="{{ event.time if event else '' }}" required>
     </div>
+
     <div class="mb-3">
       <label for="event_description" class="form-label">Event Description</label>
       <textarea class="form-control" id="event_description" name="event_description">{{ event.description if event else '' }}</textarea>
     </div>
+
     <div class="mb-3">
       <label for="event_location" class="form-label">Event Location</label>
-      <input type="text" class="form-control" id="event_location" name="event_location" value="{{ event.location if event else '' }}">
+      <input type="text" class="form-control" id="event_location" name="event_location"
+             value="{{ event.location if event else '' }}">
     </div>
+
+    <!-- Importance Field -->
+    <div class="mb-3">
+      <label for="importance" class="form-label">Importance</label>
+      <select class="form-select" id="importance" name="importance">
+        <option value="low" {% if event and event.importance == 'low' %}selected{% endif %}>Low</option>
+        <option value="normal" {% if not event or event.importance == 'normal' %}selected{% endif %}>Normal</option>
+        <option value="high" {% if event and event.importance == 'high' %}selected{% endif %}>High</option>
+      </select>
+    </div>
+
     <div class="mb-3">
       <label for="notification_enabled" class="form-label">Enable Notifications</label>
-      <input type="checkbox" id="notification_enabled" name="notification_enabled" {% if event and event.notification_enabled %}checked{% endif %} onchange="toggleReminderTime(this)">
+      <input type="checkbox" id="notification_enabled" name="notification_enabled"
+             {% if event and event.notification_enabled %}checked{% endif %}
+             onchange="toggleReminderTime(this)">
     </div>
+
     <div class="mb-3">
       <label for="reminder_time" class="form-label">Reminder Time</label>
-      <select class="form-select" id="reminder_time" name="reminder_time" {% if event and event.notification_enabled %}{% else %}disabled{% endif %}>
+      <select class="form-select" id="reminder_time" name="reminder_time"
+              {% if not event or not event.notification_enabled %}disabled{% endif %}>
         <option value="10080" {% if event and event.reminder_time == 10080 %}selected{% endif %}>1 week before</option>
         <option value="1440" {% if event and event.reminder_time == 1440 %}selected{% endif %}>1 day before</option>
         <option value="60" {% if event and event.reminder_time == 60 %}selected{% endif %}>1 hour before</option>
@@ -41,6 +76,7 @@
         <option value="5" {% if event and event.reminder_time == 5 %}selected{% endif %}>5 minutes before</option>
       </select>
     </div>
+
     <script>
       function toggleReminderTime(checkbox) {
         const reminderDropdown = document.getElementById('reminder_time');
@@ -51,8 +87,10 @@
         toggleReminderTime(checkbox);
       });
     </script>
+
     <button type="submit" class="btn btn-success">
       {{ 'Update Event' if event else 'Add Event' }}
     </button>
   </form>
-</div> {% endblock %}
+</div>
+{% endblock %}
