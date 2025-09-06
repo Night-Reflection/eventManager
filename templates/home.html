@@ -38,6 +38,94 @@
     </div>
 </div>
 
+<div class="row row-cols-1 row-cols-md-2 g-4">
+    {% for goal in goals %}
+        <div class="col">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        {% if goal.platform == 'faceit' %}
+                            <i class="fas fa-gamepad me-2 text-primary"></i>FACEIT – {{ goal.game_name }} ({{ goal.nickname }})
+                        {% elif goal.platform == 'youtube' %}
+                            <i class="fab fa-youtube me-2 text-danger"></i>YouTube – {{ goal.nickname }}
+                        {% elif goal.platform == 'tiktok' %}
+                            <i class="fab fa-tiktok me-2 text-dark"></i>TikTok – @{{ goal.nickname }}
+                        {% elif goal.platform == 'custom' %}
+                            <i class="fas fa-bullseye me-2 text-success"></i>{{ goal.custom_name }}
+                        {% endif %}
+                    </h5>
+
+                    {% if goal.platform == 'faceit' %}
+                        <p>Current ELO: <strong>{{ goal.current_elo }}</strong></p>
+                        <p>Goal ELO: <strong>{{ goal.goal_elo }}</strong></p>
+
+                    {% elif goal.platform == 'youtube' %}
+                        {% if goal.current_elo >= 10000 %}
+                            <p>Current Subs: <strong>~{{ "{:,.0f}".format(goal.current_elo).replace(',', '.') }}</strong> <small class="text-muted">(approx.)</small></p>
+                        {% else %}
+                            <p>Current Subs: <strong>{{ "{:,.0f}".format(goal.current_elo).replace(',', '.') }}</strong></p>
+                        {% endif %}
+                        <p>Goal Subs: <strong>{{ "{:,.0f}".format(goal.goal_elo).replace(',', '.') }}</strong></p>
+
+                    {% elif goal.platform == 'tiktok' %}
+                        <p>Current Followers: 
+                            {% if goal.current_elo == 1 %}
+                                <em>Fetching...</em>
+                            {% else %}
+                                <strong>{{ "{:,.0f}".format(goal.current_elo).replace(',', '.') }}</strong>
+                            {% endif %}
+                        </p>
+                        <p>Goal Followers: <strong>{{ "{:,.0f}".format(goal.goal_elo).replace(',', '.') }}</strong></p>
+
+                    {% elif goal.platform == 'custom' %}
+                        <div class="d-flex justify-content-between align-items-center">
+                            <p class="mb-0">Current Value: <strong>{{ "{:,.0f}".format(goal.current_elo).replace(',', '.') }}</strong></p>
+                            <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" 
+                                    data-bs-target="#updateValue{{ goal.id }}" aria-expanded="false">
+                                <i class="fas fa-edit"></i> Update
+                            </button>
+                        </div>
+                        <div class="collapse mt-2" id="updateValue{{ goal.id }}">
+                            <form method="POST" action="{{ url_for('update_custom_goal', goal_id=goal.id) }}" class="row g-2">
+                                <div class="col-8">
+                                    <input type="number" name="current_value" class="form-control form-control-sm" 
+                                        value="{{ goal.current_elo }}" required>
+                                </div>
+                                <div class="col-4">
+                                    <button type="submit" class="btn btn-sm btn-primary w-100">Save</button>
+                                </div>
+                            </form>
+                        </div>
+                        <p>Goal Value: <strong>{{ "{:,.0f}".format(goal.goal_elo).replace(',', '.') }}</strong></p>
+                    {% endif %}
+
+                    <p style="color: gray; opacity: 0.6; font-style: italic;">Last updated: {{ goal.last_updated|localtime(user.timezone) }}</p>
+
+                    <div class="progress mb-2" style="height: 1.25rem;">
+                        <div class="progress-bar {% if goal.progress() >= 100 %}bg-success{% elif goal.progress() >= 75 %}bg-info{% elif goal.progress() >= 50 %}bg-warning{% else %}bg-danger{% endif %}"
+                            role="progressbar" 
+                            style="width: {{ goal.progress() if goal.progress() is number else 0 }}%;">
+                            {{ goal.progress() if goal.progress() is number else 0 }}%
+                        </div>
+                    </div>
+
+                    {% if goal.progress() >= 100 %}
+                        <div class="alert alert-success py-1 mt-2 mb-0 text-center">
+                            🎉 Goal Completed!
+                        </div>
+                    {% endif %}
+
+                    <form method="POST" action="{{ url_for('delete_goal', goal_id=goal.id) }}" class="mt-3 text-end">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                            <i class="fas fa-trash-alt"></i> Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
 <script>
 fetch("/get_timezone_status", {
     credentials: "same-origin"

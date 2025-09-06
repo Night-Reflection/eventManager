@@ -49,7 +49,7 @@
     </div>
 
     {% if view == 'weekly' %}
-    <div class="d-flex justify-content-center">
+    <div class="calendar-container">
         <div class="calendar-week">
             {% for day in week_days %}
             <div class="calendar-day col">
@@ -141,15 +141,18 @@ body.dark-mode {
   --modal-title: #eee;
 }
 
+.calendar-container {
+    width: 100vw;
+    padding: 0 1em;
+    margin-left: calc(-50vw + 50%);
+}
 
 .calendar-week {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 1rem;
-    justify-items: center;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1em;
     width: 100%;
-    overflow-x: auto;
-    color: inherit; /* use inherited text color */
+    color: inherit;
 }
 
 .calendar-day {
@@ -160,7 +163,6 @@ body.dark-mode {
     max-height: 90vh;
     overflow-y: auto;
     width: 100%;
-    min-width: 12em;
     flex-shrink: 0;
     background-color: var(--bg-color);
     color: var(--text-color);
@@ -268,7 +270,6 @@ body.dark-mode .event.importance-high {
     background-color: #ff4d4d;
     color: white;
 }
-
 
 @media (max-width: 768px) {
     .calendar-week {

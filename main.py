@@ -17,6 +17,9 @@ import math
 from PIL import Image, ImageDraw
 from io import BytesIO
 from sqlalchemy import or_
+from requests_html import HTMLSession
+from lxml import html
+from multiprocessing import Pool
 
 load_dotenv()
 
@@ -77,6 +80,8 @@ def update_elo_job():
         goals = Goal.query.all()
         headers = {"Authorization": f"Bearer {FACEIT_API_KEY}"}
 
+        tiktok_tasks = []
+
         for goal in goals:
             try:
                 if goal.platform == 'faceit':
@@ -84,19 +89,29 @@ def update_elo_job():
                     if res.status_code == 200:
                         data = res.json()
                         new_elo = data.get('games', {}).get(goal.game, {}).get('faceit_elo')
-
                         if new_elo and new_elo != goal.current_elo:
                             logger.info(f"Updating {goal.nickname} ({goal.game}) from {goal.current_elo} ➝ {new_elo}")
                             goal.current_elo = new_elo
+                            goal.last_updated = datetime.now()
                             db.session.commit()
+
                 elif goal.platform == 'youtube':
                     current_subs = get_youtube_subscribers(goal.nickname)
                     if current_subs is not None and current_subs != goal.current_elo:
                         logger.info(f"Updating YouTube channel {goal.nickname} from {goal.current_elo} ➝ {current_subs}")
                         goal.current_elo = current_subs
+                        goal.last_updated = datetime.now()
                         db.session.commit()
+
+                elif goal.platform == 'tiktok':
+                    tiktok_tasks.append((goal.nickname, goal.id))
+
             except Exception as e:
                 logger.error(f"Failed to update {goal.nickname}: {e}")
+
+        if tiktok_tasks:
+            with Pool(processes=MAX_TIKTOK_PROCESSES) as pool:
+                pool.map(fetch_tiktok_followers_process, tiktok_tasks)
 
 scheduler = BackgroundScheduler()
 scheduler.add_job(
@@ -193,6 +208,7 @@ FACEIT_API_URL = "https://open.faceit.com/data/v4"
 LEMON_API_KEY = os.getenv("LEMON_SQUEEZY_API")
 LEMON_VARIANT_ID = os.getenv("LEMON_VARIANT_ID")
 CHEAPSHARK_API_BASE = "https://www.cheapshark.com/api/1.0"
+MAX_TIKTOK_PROCESSES = 25
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -537,7 +553,8 @@ def home():
                             db.session.add(ev)
 
         db.session.commit()
-        return render_template("home.html", user=user)
+        goals = Goal.query.filter_by(user_id=user.id).all() if user else []
+        return render_template("home.html", user=user, goals=goals)
 
     return redirect(url_for('login'))
 
@@ -1623,6 +1640,39 @@ def get_youtube_subscribers(channel_identifier):
         logger.error(f"Error in get_youtube_subscribers: {e}")
         return None
 
+def fetch_tiktok_followers_process(args):
+    username, goal_id = args
+    try:
+        session = HTMLSession()
+        url = f"https://www.tiktok.com/@{username}"
+        r = session.get(url, headers={"User-Agent": "Mozilla/5.0"})
+        r.html.render(timeout=20)
+
+        tree = html.fromstring(r.html.html)
+        xpath = '/html/body/div[1]/div[2]/div[2]/div/div/div[1]/div[2]/div[3]/h3/div[2]/strong'
+        elements = tree.xpath(xpath)
+        if not elements:
+            logger.error(f"XPath did not match any element for @{username}")
+            return
+
+        followers = elements[0].text
+        if 'K' in followers:
+            followers = int(float(followers.replace('K','')) * 1_000)
+        elif 'M' in followers:
+            followers = int(float(followers.replace('M','')) * 1_000_000)
+        else:
+            followers = int(followers.replace(',',''))
+
+        with app.app_context():
+            goal = Goal.query.get(goal_id)
+            if goal:
+                goal.current_elo = followers
+                goal.last_updated = datetime.now()
+                db.session.commit()
+
+    except Exception as e:
+        logger.error(f"Failed to fetch TikTok followers for @{username}: {e}")
+
 @app.route('/goals', methods=['GET', 'POST'])
 def goals():
     error = None
@@ -1640,11 +1690,11 @@ def goals():
 
         platform = request.form['platform']
 
+        # ---------------- FACEIT ----------------
         if platform == 'faceit':
             nickname = request.form['nickname']
             game = request.form['game']
             goal_elo = int(request.form['goal_elo'])
-
             headers = {"Authorization": f"Bearer {FACEIT_API_KEY}"}
             player_url = f"{FACEIT_API_URL}/players?nickname={nickname}"
             res = requests.get(player_url, headers=headers)
@@ -1653,7 +1703,6 @@ def goals():
                 data = res.json()
                 player_games = data.get('games', {})
                 current_elo = player_games.get(game, {}).get('faceit_elo')
-
                 if current_elo is not None:
                     goal = Goal(
                         nickname=nickname,
@@ -1674,6 +1723,7 @@ def goals():
             else:
                 error = "FACEIT player not found."
 
+        # ---------------- YouTube ----------------
         elif platform == 'youtube':
             channel_id = request.form['channel_id']
             goal_subs = int(request.form['goal_subs'])
@@ -1696,11 +1746,34 @@ def goals():
             else:
                 error = "Failed to retrieve YouTube data."
 
+        # ---------------- TikTok ----------------
+        elif platform == 'tiktok':
+            username = request.form['tiktok_username'].lstrip("@")
+            goal_followers = int(request.form['goal_followers'])
+
+            goal = Goal(
+                nickname=username,
+                current_elo=1,  # placeholder, temp
+                goal_elo=goal_followers,
+                game_name="TikTok Followers",
+                platform='tiktok',
+                last_updated=datetime.now(),
+                user_id=user.id
+            )
+            db.session.add(goal)
+            db.session.commit()
+
+            flash(f"TikTok goal for @{username} is being fetched in the background!", "info")
+
+            tiktok_pool.apply_async(fetch_tiktok_followers_process, args=((username, goal.id),))
+
+            return redirect(url_for('goals'))
+        
+        # ---------------- Custom ----------------
         elif platform == 'custom':
             custom_name = request.form['custom_name']
             current_value = int(request.form['current_value'])
             goal_value = int(request.form['goal_value'])
-
             goal = Goal(
                 nickname="Custom",
                 custom_name=custom_name,
@@ -1719,8 +1792,8 @@ def goals():
         if error:
             flash(error, 'danger')
 
-    goals = Goal.query.filter_by(user_id=user.id).all() if user else []
-    return render_template("goals.html", goals=goals, faceit_games=FACEIT_GAMES)
+    goals_list = Goal.query.filter_by(user_id=user.id).all() if user else []
+    return render_template("goals.html", goals=goals_list, faceit_games=FACEIT_GAMES, user=user)
 
 @app.route('/goals/update/<int:goal_id>', methods=['POST'])
 def update_custom_goal(goal_id):
@@ -2296,4 +2369,5 @@ def delete_user():
     return redirect(url_for('all_users'))
 
 if __name__ == "__main__":
+    tiktok_pool = Pool(processes=MAX_TIKTOK_PROCESSES)
     app.run(debug=True)

@@ -28,6 +28,7 @@
                     <option value="faceit">FACEIT</option>
                     <option value="youtube">YouTube</option>
                     <option value="custom">Custom Goal</option>
+                    <option value="tiktok">TikTok</option>
                 </select>
             </div>
 
@@ -76,6 +77,17 @@
                 </div>
             </div>
 
+            <div class="col-md-8 row g-3" id="tiktokFields" style="display: none;">
+                <div class="col-md-6">
+                    <label class="form-label" style="color: black;">TikTok Username</label>
+                    <input type="text" name="tiktok_username" class="form-control" placeholder="@username" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" style="color: black;">Goal Followers</label>
+                    <input type="number" name="goal_followers" class="form-control" placeholder="e.g., 1000" required>
+                </div>
+            </div>
+
             <div class="col-12 text-end">
                 <button type="submit" class="btn btn-primary mt-2">Add Goal</button>
             </div>
@@ -93,6 +105,8 @@
                             <i class="fas fa-gamepad me-2 text-primary"></i>FACEIT – {{ goal.game_name }} ({{ goal.nickname }})
                         {% elif goal.platform == 'youtube' %}
                             <i class="fab fa-youtube me-2 text-danger"></i>YouTube – {{ goal.nickname }}
+                        {% elif goal.platform == 'tiktok' %}
+                            <i class="fab fa-tiktok me-2 text-dark"></i>TikTok – @{{ goal.nickname }}
                         {% elif goal.platform == 'custom' %}
                             <i class="fas fa-bullseye me-2 text-success"></i>{{ goal.custom_name }}
                         {% endif %}
@@ -101,13 +115,25 @@
                     {% if goal.platform == 'faceit' %}
                         <p>Current ELO: <strong>{{ goal.current_elo }}</strong></p>
                         <p>Goal ELO: <strong>{{ goal.goal_elo }}</strong></p>
+
                     {% elif goal.platform == 'youtube' %}
                         {% if goal.current_elo >= 10000 %}
-                            <p>Current Subs: <strong>~{{ "{:,.0f}".format(goal.current_elo).replace(',', '.') }}</strong> <small class="text-muted">(YouTube provides approximate counts)</small></p>
+                            <p>Current Subs: <strong>~{{ "{:,.0f}".format(goal.current_elo).replace(',', '.') }}</strong> <small class="text-muted">(approx.)</small></p>
                         {% else %}
                             <p>Current Subs: <strong>{{ "{:,.0f}".format(goal.current_elo).replace(',', '.') }}</strong></p>
                         {% endif %}
                         <p>Goal Subs: <strong>{{ "{:,.0f}".format(goal.goal_elo).replace(',', '.') }}</strong></p>
+
+                    {% elif goal.platform == 'tiktok' %}
+                        <p>Current Followers: 
+                            {% if goal.current_elo == 1 %}
+                                <em>Fetching...</em>
+                            {% else %}
+                                <strong>{{ "{:,.0f}".format(goal.current_elo).replace(',', '.') }}</strong>
+                            {% endif %}
+                        </p>
+                        <p>Goal Followers: <strong>{{ "{:,.0f}".format(goal.goal_elo).replace(',', '.') }}</strong></p>
+
                     {% elif goal.platform == 'custom' %}
                         <div class="d-flex justify-content-between align-items-center">
                             <p class="mb-0">Current Value: <strong>{{ "{:,.0f}".format(goal.current_elo).replace(',', '.') }}</strong></p>
@@ -116,7 +142,6 @@
                                 <i class="fas fa-edit"></i> Update
                             </button>
                         </div>
-                        
                         <div class="collapse mt-2" id="updateValue{{ goal.id }}">
                             <form method="POST" action="{{ url_for('update_custom_goal', goal_id=goal.id) }}" class="row g-2">
                                 <div class="col-8">
@@ -128,10 +153,10 @@
                                 </div>
                             </form>
                         </div>
-                        
                         <p>Goal Value: <strong>{{ "{:,.0f}".format(goal.goal_elo).replace(',', '.') }}</strong></p>
-                        <p class="text-muted small">Last updated: {{ goal.last_updated.strftime('%Y-%m-%d %H:%M') }}</p>
                     {% endif %}
+
+                    <p style="color: gray; opacity: 0.6; font-style: italic;">Last updated: {{ goal.last_updated|localtime(user.timezone) }}</p>
 
                     <div class="progress mb-2" style="height: 1.25rem;">
                         <div class="progress-bar {% if goal.progress() >= 100 %}bg-success{% elif goal.progress() >= 75 %}bg-info{% elif goal.progress() >= 50 %}bg-warning{% else %}bg-danger{% endif %}"
@@ -157,7 +182,6 @@
         </div>
     {% endfor %}
 </div>
-
 <script>
 function toggleFields() {
     const platform = document.getElementById("platformSelect").value;
@@ -165,15 +189,18 @@ function toggleFields() {
     const faceitFields = document.getElementById("faceitFields");
     const youtubeFields = document.getElementById("youtubeFields");
     const customFields = document.getElementById("customFields");
-    
+    const tiktokFields = document.getElementById("tiktokFields");
+
     faceitFields.style.display = "none";
     youtubeFields.style.display = "none";
     customFields.style.display = "none";
-    
+    tiktokFields.style.display = "none";
+
     document.querySelectorAll("#faceitFields input, #faceitFields select").forEach(el => el.required = false);
     document.querySelectorAll("#youtubeFields input").forEach(el => el.required = false);
     document.querySelectorAll("#customFields input").forEach(el => el.required = false);
-    
+    document.querySelectorAll("#tiktokFields input").forEach(el => el.required = false);
+
     if (platform === "faceit") {
         faceitFields.style.display = "flex";
         document.querySelectorAll("#faceitFields input, #faceitFields select").forEach(el => el.required = true);
@@ -183,6 +210,9 @@ function toggleFields() {
     } else if (platform === "custom") {
         customFields.style.display = "flex";
         document.querySelectorAll("#customFields input").forEach(el => el.required = true);
+    } else if (platform === "tiktok") {
+        tiktokFields.style.display = "flex";
+        document.querySelectorAll("#tiktokFields input").forEach(el => el.required = true);
     }
 }
 
@@ -190,5 +220,4 @@ document.addEventListener('DOMContentLoaded', function() {
     toggleFields();
 });
 </script>
-
 {% endblock %}
