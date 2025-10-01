@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-3">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <h2>Movies & TV Shows</h2>
+    <form method="POST" class="form-inline my-2 text-center">
+        <input type="text" name="query" class="form-control" placeholder="Search for movies or shows..." value="{{ search_query }}" required>
+        <button type="submit" class="btn btn-primary ml-2">Search</button>
+    </form>
+
+    <div id="loading-overlay" style="
+        display:none;
+        position:fixed;
+        top:0;
+        left:0;
+        width:100%;
+        height:100%;
+        background: rgba(255,255,255,0.8);
+        z-index:9999;
+        text-align:center;
+        padding-top:20%;
+        color:#333;
+    ">
+        <div class="spinner-border text-primary" role="status" style="width:3rem; height:3rem;">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <div style="margin-top:1rem; font-size:1.5rem;">Loading movies...</div>
+    </div>
+
+    {% if results %}
+        <div class="row mt-3">
+            {% for item in results %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm">
+                    {% if item.poster %}
+                        <img src="{{ item.poster }}" class="card-img-top" alt="{{ item.title }}" style="height:250px; object-fit:cover;">
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <a href="{{ item.imdb_url }}" target="_blank">{{ item.title }}</a> ({{ item.year }})
+                        </h5>
+                        <p>{{ item.description }}</p>
+                        {% if item.genres %}
+                        <p><strong>Genres:</strong> {{ item.genres }}</p>
+                        {% endif %}
+                        {% if item.runtime %}
+                        <p><strong>Runtime:</strong> {{ item.runtime }}</p>
+                        {% endif %}
+                        {% if item.ratings %}
+                        <p><strong>Ratings:</strong></p>
+                        <ul>
+                            {% for source, value in item.ratings.items() %}
+                                {% if value %}
+                                    <li>{{ source }}: {{ value }}</li>
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+
+                        <form method="POST" action="{{ url_for('add_movie_event') }}">
+                            <input type="hidden" name="title" value="{{ item.title }}">
+                            <input type="hidden" name="description" value="{{ item.description }}">
+                            <input type="hidden" name="search_query" value="{{ search_query }}">
+                            <label for="date_{{ loop.index }}">Select Date:</label>
+                            <input type="date" name="date" id="date_{{ loop.index }}" class="form-control mb-1" required>
+                            <label for="time_{{ loop.index }}">Select Time:</label>
+                            <input type="time" name="time" id="time_{{ loop.index }}" class="form-control mb-2" required>
+                            <button type="submit" class="btn btn-success btn-block mt-2">Add to Calendar</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+
+<script>
+    const form = document.querySelector('form');
+    form.addEventListener('submit', () => {
+        document.getElementById('loading-overlay').style.display = 'block';
+    });
+</script>
+{% endblock %}

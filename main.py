@@ -209,6 +209,8 @@ LEMON_API_KEY = os.getenv("LEMON_SQUEEZY_API")
 LEMON_VARIANT_ID = os.getenv("LEMON_VARIANT_ID")
 CHEAPSHARK_API_BASE = "https://www.cheapshark.com/api/1.0"
 MAX_TIKTOK_PROCESSES = 25
+OMDB_API_KEY = os.getenv("OMDB_API_KEY")
+WATCHMODE_API_KEY = os.getenv("WATCHMODE_API_KEY")
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -2367,6 +2369,90 @@ def delete_user():
         flash("User not found.", "warning")
 
     return redirect(url_for('all_users'))
+
+@app.route('/movies', methods=['GET', 'POST'])
+def movies():
+    if 'user_id' not in session:
+        flash("Please log in to access this page.", "danger")
+        return redirect(url_for('login'))
+
+    user = User.query.get(session['user_id'])
+    search_query = request.form.get('query', '').strip() if request.method == 'POST' else request.args.get('search', '').strip()
+    search_results = []
+
+    if search_query:
+        wm_search_url = "https://api.watchmode.com/v1/search/"
+        wm_params = {
+            "apiKey": WATCHMODE_API_KEY,
+            "search_field": "name",
+            "search_value": search_query,
+            "types": "movie,tv"
+        }
+        wm_resp = requests.get(wm_search_url, params=wm_params).json()
+
+        imdb_ids = []
+        if wm_resp.get("title_results"):
+            for wm_item in wm_resp["title_results"]:
+                if wm_item.get("imdb_id"):
+                    imdb_ids.append(wm_item["imdb_id"])
+
+        for imdb_id in imdb_ids:
+            omdb_resp = requests.get(
+                "http://www.omdbapi.com/",
+                params={"apikey": OMDB_API_KEY, "i": imdb_id, "plot": "full"}
+            ).json()
+
+            if omdb_resp.get("Response") != "True":
+                continue
+
+            ratings_dict = {r['Source']: r['Value'] for r in omdb_resp.get("Ratings", [])}
+            search_results.append({
+                "title": omdb_resp.get("Title"),
+                "year": omdb_resp.get("Year"),
+                "poster": omdb_resp.get("Poster") if omdb_resp.get("Poster") != "N/A" else None,
+                "description": omdb_resp.get("Plot"),
+                "genres": omdb_resp.get("Genre"),
+                "runtime": omdb_resp.get("Runtime"),
+                "ratings": {
+                    "IMDb": ratings_dict.get("Internet Movie Database"),
+                    "Rotten Tomatoes": ratings_dict.get("Rotten Tomatoes"),
+                    "Metacritic": ratings_dict.get("Metacritic")
+                },
+                "imdb_url": f"https://www.imdb.com/title/{imdb_id}/",
+            })
+
+    return render_template(
+        "movies.html",
+        user=user,
+        results=search_results,
+        search_query=search_query
+    )
+
+@app.route('/movies/add_event', methods=['POST'])
+def add_movie_event():
+    if 'user_id' not in session:
+        flash("Please log in to add events.", "danger")
+        return redirect(url_for('login'))
+
+    user = User.query.get(session['user_id'])
+    title = request.form.get("title")
+    description = request.form.get("description")
+    date = request.form.get("date") or datetime.today().strftime("%Y-%m-%d")
+    time = request.form.get("time") or "20:00"
+
+    new_event = Event(
+        title=title,
+        description=description,
+        date=date,
+        time=time,
+        location="Streaming / Online",
+        user_id=user.id
+    )
+    db.session.add(new_event)
+    db.session.commit()
+
+    flash(f"{title} added to your calendar!", "success")
+    return redirect(url_for('movies', search=request.form.get("search_query", "")))
 
 if __name__ == "__main__":
     tiktok_pool = Pool(processes=MAX_TIKTOK_PROCESSES)
