@@ -211,6 +211,8 @@ CHEAPSHARK_API_BASE = "https://www.cheapshark.com/api/1.0"
 MAX_TIKTOK_PROCESSES = 25
 OMDB_API_KEY = os.getenv("OMDB_API_KEY")
 WATCHMODE_API_KEY = os.getenv("WATCHMODE_API_KEY")
+MAINTENANCE_MODE = False # enable / disable maintance page
+ADMIN_IPS = ["92.37.11.230"] 
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -395,6 +397,36 @@ def schedule_notification(event, reminder_minutes):
 
     trigger = DateTrigger(run_date=reminder_time_utc)
     scheduler.add_job(send_notification_email, trigger=trigger)
+
+@app.context_processor
+def inject_user():
+    user = None
+    if 'user_id' in session:
+        user = User.query.get(session['user_id'])
+    return dict(user=user)
+
+@app.before_request
+def maintenance():
+    if request.endpoint in ["toggle_maintenance", "terms_of_service", "privacy_policy"]:
+        return
+    if not MAINTENANCE_MODE:
+        return
+    if 'user_id' in session:
+        user = User.query.get(session['user_id'])
+        if user and user.role == "admin":
+            return
+    return render_template("maintenance.html"), 503
+
+    
+@app.route("/toggle_maintenance")
+def toggle_maintenance():
+    global MAINTENANCE_MODE
+    if 'user_id' in session:
+        user = User.query.get(session['user_id'])
+        if user and user.role == "admin":
+            MAINTENANCE_MODE = not MAINTENANCE_MODE
+            print("Maintenance mode is now:", MAINTENANCE_MODE)
+    return redirect(request.referrer or url_for("home"))
 
 @app.route("/get_timezone_status")
 def get_timezone_status():
