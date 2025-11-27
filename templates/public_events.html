@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+{% block content %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+  {{ message }}
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<script src="https://allevents.in/scripts/ae_event_plugin_widget.js"></script>
+
+<style>
+.ae-dark-embed .card,
+.ae-dark-embed .ae-card,
+.ae-dark-embed .event-card,
+.ae-dark-embed .ae-event,
+.ae-dark-embed .item,
+.ae-dark-embed .widget-card {
+  background-color: rgba(30,30,30,0.98) !important;
+  color: #e9ecef !important;
+  border-color: rgba(255,255,255,0.06) !important;
+}
+.ae-dark-embed .btn,
+.ae-dark-embed .button,
+.ae-dark-embed .ae-button {
+  background-color: #343a40 !important;
+  color: #fff !important;
+  border-color: rgba(255,255,255,0.06) !important;
+}
+.ae-dark-embed iframe {
+  filter: invert(1) hue-rotate(180deg) saturate(0.9) contrast(0.95);
+  background-color: transparent !important;
+}
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  EventWidget.init("vue-widget-container", {
+    cityName: "",
+    category: "All Events",
+    coordinates: { latitude: 69, longitude: 69 },
+    radius: 1,
+    sort: 0,
+    showHeading: true
+  });
+
+  let lastDiscovery = null;
+  let fetchInProgress = false;
+
+  function getDiscoveryParam() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('_aeDiscovery') || '';
+  }
+  function extractEventIdFromDiscovery(discovery) {
+    const m = discovery && discovery.match(/\/event\/(\d+)/);
+    return m ? m[1] : null;
+  }
+
+  const offcanvasHtml = `
+  <div class="offcanvas offcanvas-end" tabindex="-1" id="eventAddOffcanvas" aria-labelledby="eventAddOffcanvasLabel" data-bs-backdrop="true" data-bs-scroll="true" style="z-index:2000;">
+    <div class="offcanvas-header">
+      <h5 id="eventAddOffcanvasLabel">Add event?</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+      <div id="eventAddContent">
+        <div id="eventAddLoading" style="display:none">Loading event details…</div>
+        <div id="eventAddError" class="alert alert-danger" style="display:none"></div>
+        <div id="eventAddDetails" style="display:none">
+          <h5 id="eventName"></h5>
+          <p id="eventDescription"></p>
+          <p><strong>When:</strong> <span id="eventStart"></span></p>
+          <p><strong>Where:</strong> <span id="eventLocation"></span></p>
+          <div class="d-grid">
+            <button id="saveEventBtn" class="btn btn-primary">Add event to my calendar</button>
+          </div>
+          <div id="saveResult" class="mt-2"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  `;
+  if (!document.getElementById('eventAddOffcanvas')) {
+    document.body.insertAdjacentHTML('beforeend', offcanvasHtml);
+  }
+  const offcanvasEl = document.getElementById('eventAddOffcanvas');
+  const bsOffcanvas = new bootstrap.Offcanvas(offcanvasEl);
+
+  function setText(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+  function showAddPanelLoading() {
+    document.getElementById('eventAddLoading').style.display = 'block';
+    document.getElementById('eventAddError').style.display = 'none';
+    document.getElementById('eventAddDetails').style.display = 'none';
+    document.getElementById('saveResult').innerHTML = '';
+  }
+  function showAddPanelError(msg) {
+    document.getElementById('eventAddLoading').style.display = 'none';
+    const e = document.getElementById('eventAddError');
+    e.style.display = 'block';
+    e.textContent = msg;
+    document.getElementById('eventAddDetails').style.display = 'none';
+    bsOffcanvas.show();
+  }
+
+  function isDarkModeActive() {
+    const html = document.documentElement;
+    const explicit = html.getAttribute('data-bs-theme');
+    if (explicit) return explicit === 'dark';
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+
+  const applyWidgetDarkness = (() => {
+    let raf = null;
+    let last = null;
+    return (dark) => {
+      if (last === dark) return;
+      last = dark;
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        raf = null;
+        const container = document.getElementById('vue-widget-container');
+        if (!container) return;
+        container.classList.toggle('ae-dark-embed', dark);
+        const offcanvas = document.getElementById('eventAddOffcanvas');
+        if (offcanvas) offcanvas.classList.toggle('ae-dark-embed', dark);
+        const iframe = container.querySelector('iframe');
+        if (iframe) {
+          iframe.style.filter = dark ? 'invert(1) hue-rotate(180deg) saturate(0.9) contrast(0.95)' : '';
+          iframe.style.backgroundColor = dark ? 'transparent' : '';
+        }
+      });
+    };
+  })();
+
+  const htmlObserver = new MutationObserver((mutations) => {
+    for (const m of mutations) {
+      if (m.type === 'attributes' && m.attributeName === 'data-bs-theme') {
+        applyWidgetDarkness(isDarkModeActive());
+        break;
+      }
+    }
+  });
+  htmlObserver.observe(document.documentElement, { attributes: true });
+
+  const container = document.getElementById('vue-widget-container');
+  if (container) {
+    const containerObserver = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        if (m.type === 'childList') {
+          for (const n of m.addedNodes) {
+            if (n && n.tagName === 'IFRAME') {
+              applyWidgetDarkness(isDarkModeActive());
+              return;
+            }
+          }
+        }
+      }
+    });
+    containerObserver.observe(container, { childList: true });
+  }
+
+  applyWidgetDarkness(isDarkModeActive());
+
+  async function populateAddPanel(data) {
+    document.getElementById('eventAddLoading').style.display = 'none';
+    document.getElementById('eventAddError').style.display = 'none';
+    document.getElementById('eventAddDetails').style.display = 'block';
+
+    const descEl = document.getElementById('eventDescription');
+    const fullDesc = data.description || '';
+    if (fullDesc.length > 350) {
+      const short = fullDesc.slice(0, 350).replace(/\s+\S*$/, '') + '…';
+      descEl.innerHTML = `<div id="shortDesc">${short} <a href="#" id="showMoreDesc">Show more</a></div><div id="fullDesc" style="display:none">${fullDesc} <a href="#" id="showLessDesc">Show less</a></div>`;
+      setTimeout(() => {
+        const showMore = document.getElementById('showMoreDesc');
+        const showLess = document.getElementById('showLessDesc');
+        if (showMore) showMore.addEventListener('click', (e) => { e.preventDefault(); document.getElementById('shortDesc').style.display = 'none'; document.getElementById('fullDesc').style.display = 'block'; });
+        if (showLess) showLess.addEventListener('click', (e) => { e.preventDefault(); document.getElementById('shortDesc').style.display = 'block'; document.getElementById('fullDesc').style.display = 'none'; });
+      }, 50);
+    } else {
+      descEl.textContent = fullDesc;
+    }
+
+    setText('eventName', data.name || '(no title)');
+    setText('eventStart', data.start_time_pretty || data.start_time || '(unknown)');
+    setText('eventLocation', data.location || '(unknown)');
+
+    const saveBtn = document.getElementById('saveEventBtn');
+    saveBtn.onclick = async function() {
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving…';
+      try {
+        const payload = {
+          external_id: data.external_id,
+          name: data.name,
+          description: data.description,
+          location: data.location,
+          start_time: data.start_time
+        };
+        const resp = await fetch('/api/save_event', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
+        });
+        const result = await resp.json();
+        if (resp.ok) {
+          document.getElementById('saveResult').innerHTML = '<div class="alert alert-success">Saved to your calendar.</div>';
+        } else {
+          document.getElementById('saveResult').innerHTML = '<div class="alert alert-danger">Save failed: ' + JSON.stringify(result) + '</div>';
+        }
+      } catch (err) {
+        document.getElementById('saveResult').innerHTML = '<div class="alert alert-danger">Exception: ' + err.toString() + '</div>';
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Add event to my calendar';
+      }
+    };
+
+    applyWidgetDarkness(isDarkModeActive());
+    bsOffcanvas.show();
+  }
+
+  async function handleDiscoveryChange() {
+    const discovery = getDiscoveryParam();
+    if (!discovery) {
+      lastDiscovery = discovery;
+      return;
+    }
+    if (discovery === lastDiscovery) return;
+    lastDiscovery = discovery;
+    const eventId = extractEventIdFromDiscovery(discovery);
+    if (!eventId) return;
+
+    if (fetchInProgress) return;
+    fetchInProgress = true;
+    showAddPanelLoading();
+
+    try {
+      const resp = await fetch(`/api/fetch_event/${eventId}`);
+      if (!resp.ok) {
+        const txt = await resp.text();
+        showAddPanelError(`Failed to fetch event: ${resp.status} ${txt}`);
+        return;
+      }
+      const data = await resp.json();
+      await new Promise(r => setTimeout(r, 350));
+      await populateAddPanel(data);
+    } catch (err) {
+      showAddPanelError('Exception: ' + err.toString());
+    } finally {
+      fetchInProgress = false;
+    }
+  }
+
+  (function() {
+    const _wr = function(type) {
+      const orig = history[type];
+      return function() {
+        const rv = orig.apply(this, arguments);
+        window.dispatchEvent(new Event('locationchange'));
+        return rv;
+      };
+    };
+    history.pushState = _wr('pushState');
+    history.replaceState = _wr('replaceState');
+    window.addEventListener('popstate', () => window.dispatchEvent(new Event('locationchange')));
+  })();
+
+  window.addEventListener('locationchange', handleDiscoveryChange);
+  handleDiscoveryChange();
+
+});
+</script>
+
+<div id="vue-widget-container"></div>
+
+{% endblock %}

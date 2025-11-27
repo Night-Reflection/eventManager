@@ -1143,3 +1143,206 @@ Content-Length: 31
 2025-11-05 17:03:24 ERROR: XPath did not match any element for @realelanip
 2025-11-05 17:03:48 INFO: Logger initialized
 2025-11-05 17:03:48 INFO: Databases created
+2025-11-27 14:54:20 INFO: Logger initialized
+2025-11-27 14:54:20 INFO: Databases created
+2025-11-27 14:54:21 INFO: Logger initialized
+2025-11-27 14:54:21 INFO: Databases created
+2025-11-27 15:09:20 INFO: Updating YouTube channel @Sparkles from 2470000 ➝ 2480000
+2025-11-27 15:09:21 INFO: Updating YouTube channel @NightReflection from 7 ➝ 6
+2025-11-27 15:09:46 ERROR: XPath did not match any element for @realelanip
+2025-11-27 15:09:46 ERROR: XPath did not match any element for @realelanip
+2025-11-27 15:18:00 INFO: Logger initialized
+2025-11-27 15:18:01 INFO: Databases created
+2025-11-27 15:18:19 INFO: Logger initialized
+2025-11-27 15:18:19 INFO: Databases created
+2025-11-27 15:18:35 INFO: Logger initialized
+2025-11-27 15:18:35 INFO: Databases created
+2025-11-27 15:19:27 INFO: Logger initialized
+2025-11-27 15:19:28 INFO: Databases created
+2025-11-27 15:19:42 INFO: Logger initialized
+2025-11-27 15:19:42 INFO: Databases created
+2025-11-27 15:20:19 INFO: Logger initialized
+2025-11-27 15:20:19 INFO: Databases created
+2025-11-27 15:20:19 INFO: Logger initialized
+2025-11-27 15:20:19 INFO: Databases created
+2025-11-27 15:20:34 INFO: Logger initialized
+2025-11-27 15:20:34 INFO: Databases created
+2025-11-27 15:20:56 INFO: Logger initialized
+2025-11-27 15:20:56 INFO: Databases created
+2025-11-27 15:24:56 INFO: Logger initialized
+2025-11-27 15:24:56 INFO: Databases created
+2025-11-27 15:32:05 INFO: Logger initialized
+2025-11-27 15:32:05 INFO: Databases created
+2025-11-27 15:35:23 ERROR: XPath did not match any element for @realelanip
+2025-11-27 15:35:40 INFO: Logger initialized
+2025-11-27 15:35:40 INFO: Databases created
+2025-11-27 15:39:27 INFO: Logger initialized
+2025-11-27 15:39:27 INFO: Databases created
+2025-11-27 15:43:33 INFO: Logger initialized
+2025-11-27 15:43:33 INFO: Databases created
+2025-11-27 15:45:11 INFO: Logger initialized
+2025-11-27 15:45:11 INFO: Databases created
+2025-11-27 15:45:30 INFO: Logger initialized
+2025-11-27 15:45:30 INFO: Databases created
+2025-11-27 15:46:34 INFO: Logger initialized
+2025-11-27 15:46:34 INFO: Databases created
+2025-11-27 15:47:23 INFO: Logger initialized
+2025-11-27 15:47:23 INFO: Databases created
+2025-11-27 15:49:07 INFO: Logger initialized
+2025-11-27 15:49:07 INFO: Databases created
+2025-11-27 15:49:41 INFO: Logger initialized
+2025-11-27 15:49:41 INFO: Databases created
+2025-11-27 15:49:45 INFO: Logger initialized
+2025-11-27 15:49:45 INFO: Databases created
+2025-11-27 15:49:55 INFO: Logger initialized
+2025-11-27 15:49:55 INFO: Databases created
+2025-11-27 15:50:23 ERROR: XPath did not match any element for @realelanip
+2025-11-27 15:54:14 INFO: Logger initialized
+2025-11-27 15:54:14 INFO: Databases created
+2025-11-27 15:54:22 INFO: Logger initialized
+2025-11-27 15:54:22 INFO: Databases created
+2025-11-27 15:55:53 INFO: Logger initialized
+2025-11-27 15:55:53 INFO: Databases created
+2025-11-27 16:02:20 INFO: Logger initialized
+2025-11-27 16:02:20 INFO: Databases created
+2025-11-27 16:02:36 INFO: Logger initialized
+2025-11-27 16:02:36 INFO: Databases created
+2025-11-27 16:02:51 INFO: Logger initialized
+2025-11-27 16:02:51 INFO: Databases created
+2025-11-27 16:04:42 INFO: Logger initialized
+2025-11-27 16:04:42 INFO: Databases created
+2025-11-27 16:05:24 ERROR: XPath did not match any element for @realelanip
+2025-11-27 16:17:51 INFO: Logger initialized
+2025-11-27 16:17:51 INFO: Databases created
+2025-11-27 16:19:54 INFO: Logger initialized
+2025-11-27 16:19:54 INFO: Databases created
+2025-11-27 16:20:23 ERROR: XPath did not match any element for @realelanip
+2025-11-27 16:20:34 INFO: Logger initialized
+2025-11-27 16:20:34 INFO: Databases created
+2025-11-27 16:20:34 INFO: Logger initialized
+2025-11-27 16:20:35 INFO: Databases created
+2025-11-27 16:20:57 INFO: Logger initialized
+2025-11-27 16:20:57 INFO: Databases created
+2025-11-27 16:20:58 INFO: Logger initialized
+2025-11-27 16:20:58 INFO: Databases created
+2025-11-27 16:21:12 INFO: Logger initialized
+2025-11-27 16:21:12 INFO: Databases created
+2025-11-27 16:21:17 INFO: Logger initialized
+2025-11-27 16:21:17 INFO: Databases created
+2025-11-27 16:21:19 INFO: Logger initialized
+2025-11-27 16:21:19 INFO: Databases created
+2025-11-27 16:36:02 ERROR: XPath did not match any element for @realelanip
+2025-11-27 16:36:23 ERROR: XPath did not match any element for @realelanip
+2025-11-27 16:51:01 ERROR: XPath did not match any element for @realelanip
+2025-11-27 16:51:23 ERROR: XPath did not match any element for @realelanip
+2025-11-27 17:06:02 ERROR: XPath did not match any element for @realelanip
+2025-11-27 17:06:23 ERROR: XPath did not match any element for @realelanip
+2025-11-27 17:21:02 ERROR: XPath did not match any element for @realelanip
+2025-11-27 17:21:24 ERROR: XPath did not match any element for @realelanip
+2025-11-27 17:36:02 ERROR: XPath did not match any element for @realelanip
+2025-11-27 17:36:24 ERROR: XPath did not match any element for @realelanip
+2025-11-27 18:19:52 INFO: Logger initialized
+2025-11-27 18:19:52 INFO: Databases created
+2025-11-27 18:19:53 INFO: Logger initialized
+2025-11-27 18:19:53 INFO: Databases created
+2025-11-27 18:22:57 INFO: Logger initialized
+2025-11-27 18:22:57 INFO: Databases created
+2025-11-27 18:25:43 INFO: Logger initialized
+2025-11-27 18:25:43 INFO: Databases created
+2025-11-27 18:26:08 INFO: Logger initialized
+2025-11-27 18:26:08 INFO: Databases created
+2025-11-27 18:26:09 INFO: Logger initialized
+2025-11-27 18:26:09 INFO: Databases created
+2025-11-27 18:28:09 INFO: Logger initialized
+2025-11-27 18:28:09 INFO: Databases created
+2025-11-27 18:28:53 INFO: Logger initialized
+2025-11-27 18:28:53 INFO: Databases created
+2025-11-27 18:28:54 INFO: Logger initialized
+2025-11-27 18:28:54 INFO: Databases created
+2025-11-27 18:29:04 INFO: Logger initialized
+2025-11-27 18:29:04 INFO: Databases created
+2025-11-27 18:30:47 INFO: Logger initialized
+2025-11-27 18:30:47 INFO: Databases created
+2025-11-27 18:31:40 INFO: Logger initialized
+2025-11-27 18:31:40 INFO: Databases created
+2025-11-27 18:36:02 INFO: Logger initialized
+2025-11-27 18:36:03 INFO: Databases created
+2025-11-27 18:37:29 INFO: Logger initialized
+2025-11-27 18:37:29 INFO: Databases created
+2025-11-27 18:38:53 INFO: Logger initialized
+2025-11-27 18:38:54 INFO: Databases created
+2025-11-27 18:39:19 INFO: Logger initialized
+2025-11-27 18:39:19 INFO: Databases created
+2025-11-27 18:39:20 INFO: Logger initialized
+2025-11-27 18:39:20 INFO: Databases created
+2025-11-27 18:39:27 INFO: Logger initialized
+2025-11-27 18:39:27 INFO: Databases created
+2025-11-27 18:41:20 INFO: Logger initialized
+2025-11-27 18:41:20 INFO: Databases created
+2025-11-27 18:41:38 INFO: Logger initialized
+2025-11-27 18:41:38 INFO: Databases created
+2025-11-27 18:41:39 INFO: Logger initialized
+2025-11-27 18:41:39 INFO: Databases created
+2025-11-27 18:43:00 INFO: Logger initialized
+2025-11-27 18:43:00 INFO: Databases created
+2025-11-27 18:43:03 INFO: Logger initialized
+2025-11-27 18:43:03 INFO: Databases created
+2025-11-27 18:43:12 INFO: Logger initialized
+2025-11-27 18:43:12 INFO: Databases created
+2025-11-27 18:43:32 INFO: Logger initialized
+2025-11-27 18:43:32 INFO: Databases created
+2025-11-27 18:43:49 INFO: Logger initialized
+2025-11-27 18:43:49 INFO: Databases created
+2025-11-27 18:43:50 INFO: Logger initialized
+2025-11-27 18:43:50 INFO: Databases created
+2025-11-27 18:48:51 INFO: Logger initialized
+2025-11-27 18:48:51 INFO: Databases created
+2025-11-27 18:49:06 INFO: Logger initialized
+2025-11-27 18:49:06 INFO: Databases created
+2025-11-27 18:49:12 INFO: Logger initialized
+2025-11-27 18:49:12 INFO: Databases created
+2025-11-27 18:49:48 INFO: Logger initialized
+2025-11-27 18:49:48 INFO: Databases created
+2025-11-27 18:49:49 INFO: Logger initialized
+2025-11-27 18:49:49 INFO: Databases created
+2025-11-27 18:57:05 INFO: Logger initialized
+2025-11-27 18:57:05 INFO: Databases created
+2025-11-27 18:57:39 INFO: Logger initialized
+2025-11-27 18:57:39 INFO: Databases created
+2025-11-27 19:05:12 ERROR: XPath did not match any element for @realelanip
+2025-11-27 19:12:43 ERROR: XPath did not match any element for @realelanip
+2025-11-27 19:15:49 INFO: Logger initialized
+2025-11-27 19:15:49 INFO: Databases created
+2025-11-27 19:19:13 INFO: Logger initialized
+2025-11-27 19:19:13 INFO: Databases created
+2025-11-27 19:19:52 ERROR: XPath did not match any element for @realelanip
+2025-11-27 19:34:17 ERROR: XPath did not match any element for @realelanip
+2025-11-27 19:34:52 ERROR: XPath did not match any element for @realelanip
+2025-11-27 19:43:12 INFO: Logger initialized
+2025-11-27 19:43:12 INFO: Databases created
+2025-11-27 19:49:52 ERROR: XPath did not match any element for @realelanip
+2025-11-27 19:52:53 INFO: Logger initialized
+2025-11-27 19:52:53 INFO: Databases created
+2025-11-27 19:53:50 INFO: Logger initialized
+2025-11-27 19:53:50 INFO: Databases created
+2025-11-27 19:54:23 INFO: Logger initialized
+2025-11-27 19:54:23 INFO: Databases created
+2025-11-27 19:54:23 INFO: Logger initialized
+2025-11-27 19:54:23 INFO: Databases created
+2025-11-27 19:54:38 ERROR: Error in api_save_event: 'Event' object has no attribute 'to_dict'
+2025-11-27 19:57:16 INFO: Logger initialized
+2025-11-27 19:57:16 INFO: Databases created
+2025-11-27 19:57:49 INFO: Logger initialized
+2025-11-27 19:57:49 INFO: Databases created
+2025-11-27 19:57:50 INFO: Logger initialized
+2025-11-27 19:57:50 INFO: Databases created
+2025-11-27 20:00:47 INFO: Logger initialized
+2025-11-27 20:00:47 INFO: Databases created
+2025-11-27 20:00:51 INFO: Logger initialized
+2025-11-27 20:00:51 INFO: Databases created
+2025-11-27 20:00:54 INFO: Logger initialized
+2025-11-27 20:00:54 INFO: Databases created
+2025-11-27 20:00:57 INFO: Logger initialized
+2025-11-27 20:00:58 INFO: Databases created
+2025-11-27 20:01:04 INFO: Logger initialized
+2025-11-27 20:01:04 INFO: Databases created

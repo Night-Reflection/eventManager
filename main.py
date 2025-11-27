@@ -20,6 +20,10 @@ from sqlalchemy import or_
 from requests_html import HTMLSession
 from lxml import html
 from multiprocessing import Pool
+from bs4 import BeautifulSoup
+import re
+import json
+from dateutil import parser as dateparser
 
 load_dotenv()
 
@@ -238,6 +242,20 @@ class Event(db.Model):
     importance = db.Column(db.String(10), default="normal")
 
     user = db.relationship('User', backref=db.backref('events', lazy=True))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'date': self.date,
+            'time': self.time,
+            'description': self.description,
+            'location': self.location,
+            'user_id': self.user_id,
+            'notification_enabled': self.notification_enabled,
+            'reminder_time': self.reminder_time,
+            'importance': self.importance
+        }
 
 class Team(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -2485,6 +2503,339 @@ def add_movie_event():
 
     flash(f"{title} added to your calendar!", "success")
     return redirect(url_for('movies', search=request.form.get("search_query", "")))
+
+@app.route('/Public_events')
+def public_events():
+    return render_template("public_events.html")
+
+def try_parse_date(text):
+    if not text:
+        return None
+    t = re.sub(r'\bat\b', '', text, flags=re.I)
+    t = re.sub(r'\s+GMT[+\-\d:]*', '', t, flags=re.I)
+    try:
+        dt = dateparser.parse(t, fuzzy=True)
+        return dt
+    except Exception:
+        return None
+
+def extract_event_from_jsonld(soup):
+    scripts = soup.find_all("script", {"type": "application/ld+json"})
+    for s in scripts:
+        if not s.string:
+            continue
+        try:
+            payload = json.loads(s.string)
+        except Exception:
+            try:
+                j = re.search(r'\{.*\}', s.string, re.S)
+                if j:
+                    payload = json.loads(j.group(0))
+                else:
+                    continue
+            except Exception:
+                continue
+
+        items = payload if isinstance(payload, list) else [payload]
+        for p in items:
+            if isinstance(p, dict) and '@graph' in p and isinstance(p['@graph'], list):
+                for g in p['@graph']:
+                    if isinstance(g, dict) and ('Event' in (g.get('@type') or '') or g.get('@type','').lower()=='event'):
+                        p = g
+                        break
+            if isinstance(p, dict):
+                typ = p.get('@type') or p.get('type') or ''
+                if isinstance(typ, list):
+                    typ = typ[0] if typ else ''
+                if 'Event' in typ or typ.lower() == 'event':
+                    name = p.get('name') or p.get('headline')
+                    description = p.get('description')
+                    start = p.get('startDate') or p.get('start_time') or p.get('date') or p.get('start')
+                    location = None
+                    loc = p.get('location') or p.get('venue') or p.get('address')
+                    if isinstance(loc, dict):
+                        location = loc.get('name') or loc.get('address')
+                        if isinstance(location, dict):
+                            parts = []
+                            for k in ('streetAddress','addressLocality','addressRegion','postalCode','addressCountry'):
+                                if location.get(k):
+                                    parts.append(location.get(k))
+                            location = ', '.join(parts)
+                    elif isinstance(loc, str):
+                        location = loc
+
+                    dt = try_parse_date(start) if start else None
+                    start_iso = dt.isoformat() if isinstance(dt, datetime) else (start if start else None)
+
+                    return {
+                        'name': name,
+                        'description': description,
+                        'start_time': start_iso,
+                        'location': location
+                    }
+    return None
+
+def extract_event_from_dom(soup):
+    name = None
+    title_candidates = []
+    for tag in ('h1','h2','h3'):
+        for el in soup.find_all(tag):
+            text = el.get_text(" ", strip=True)
+            if text and len(text) > 5 and len(text) < 200:
+                title_candidates.append((len(text), text))
+    cls_title = soup.find(attrs={'class': re.compile(r'(event|ev|ae).*title|title.*event', re.I)})
+    if cls_title:
+        t = cls_title.get_text(" ", strip=True)
+        if t:
+            title_candidates.append((len(t), t))
+    id_title = soup.find(id=re.compile(r'(event|ev|ae).*title', re.I))
+    if id_title:
+        t = id_title.get_text(" ", strip=True)
+        if t:
+            title_candidates.append((len(t), t))
+    if title_candidates:
+        title_candidates.sort(reverse=True)
+        name = title_candidates[0][1]
+
+    description = None
+    desc_sel = soup.find(attrs={'class': re.compile(r'(description|about|event-description|ev-desc|ae-desc)', re.I)})
+    if desc_sel:
+        description = desc_sel.get_text("\n", strip=True)
+    else:
+        about_label = soup.find(text=re.compile(r'About this event', re.I))
+        if about_label:
+            parent = about_label.parent
+            candidate = parent.find_next_sibling()
+            if candidate:
+                description = candidate.get_text("\n", strip=True)
+            else:
+                description = parent.get_text("\n", strip=True)
+
+    location = None
+    venue_sel = soup.find(attrs={'class': re.compile(r'(venue|location|event-venue|event-location|ev-venue)', re.I)})
+    if venue_sel:
+        location = venue_sel.get_text(" ", strip=True)
+    else:
+        labels = soup.find_all(text=re.compile(r'Venue|Location|Where', re.I))
+        for t in labels:
+            parent = t.parent
+            if parent:
+                sib = parent.find_next_sibling()
+                if sib and sib.get_text(strip=True):
+                    location = sib.get_text(" ", strip=True)
+                    break
+                text = parent.get_text(" ", strip=True)
+                if text and len(text) < 200:
+                    location = re.sub(r'(Venue|Location|Where)[:\s]*', '', text, flags=re.I).strip()
+                    if location:
+                        break
+
+    start_time = None
+    time_tags = soup.find_all('time')
+    for t in time_tags:
+        if t.get('datetime'):
+            dt = try_parse_date(t['datetime'])
+            if isinstance(dt, datetime):
+                start_time = dt.isoformat()
+                break
+        txt = t.get_text(" ", strip=True)
+        dt = try_parse_date(txt)
+        if isinstance(dt, datetime):
+            start_time = dt.isoformat()
+            break
+
+    if not start_time:
+        dt_sel = soup.find(attrs={'class': re.compile(r'(date|time|start|when|event-date|ev-date)', re.I)})
+        if dt_sel:
+            dt = try_parse_date(dt_sel.get_text(" ", strip=True))
+            if isinstance(dt, datetime):
+                start_time = dt.isoformat()
+
+    if not start_time:
+        text = soup.get_text(" ", strip=True)
+        m = re.search(r'\b(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)[a-z]*[,.\s]*\d{1,2}\s+\w+\s*,\s*\d{4}\s*(?:at\s*)?\d{1,2}:\d{2}\s*(?:am|pm|AM|PM)?', text)
+        if not m:
+            m = re.search(r'\d{1,2}\s+\w+\s+\d{4}\s*(?:at\s*)?\d{1,2}:\d{2}\s*(?:am|pm|AM|PM)?', text)
+        if m:
+            dt = try_parse_date(m.group(0))
+            if isinstance(dt, datetime):
+                start_time = dt.isoformat()
+
+    if not description:
+        og_desc = soup.find("meta", property="og:description")
+        if og_desc and og_desc.get("content"):
+            description = og_desc["content"]
+        else:
+            meta_desc = soup.find("meta", attrs={"name": "description"})
+            if meta_desc and meta_desc.get("content"):
+                description = meta_desc["content"]
+
+    if not name:
+        og_title = soup.find("meta", property="og:title")
+        if og_title and og_title.get("content"):
+            name = og_title["content"]
+        elif soup.title:
+            name = soup.title.string
+
+    if description:
+        description = re.sub(r'\s{2,}', ' ', description).strip()
+
+    return {
+        'name': name,
+        'description': description,
+        'start_time': start_time,
+        'location': location
+    }
+
+def parse_event_datetime(event_date, event_time):
+    if len(event_time.split(':')) == 2:
+        fmt = "%Y-%m-%d %H:%M"
+    elif len(event_time.split(':')) == 3:
+        fmt = "%Y-%m-%d %H:%M:%S"
+    else:
+        raise ValueError(f"Unexpected time format: {event_time}")
+    return datetime.strptime(f"{event_date} {event_time}", fmt)
+
+@app.route('/api/fetch_event/<event_id>', methods=['GET'])
+def api_fetch_event(event_id):
+    url = f"https://allevents.in/event/{event_id}"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (compatible; event-fetcher/1.0; +https://yourdomain.example)"
+    }
+    try:
+        resp = requests.get(url, headers=headers, timeout=12)
+        if resp.status_code != 200:
+            resp = requests.get(url + '/', headers=headers, timeout=12)
+        if resp.status_code != 200:
+            return jsonify({'error': 'Failed to fetch event page', 'status_code': resp.status_code}), 502
+
+        html = resp.text
+        soup = BeautifulSoup(html, "html.parser")
+
+        ev = extract_event_from_jsonld(soup)
+        if not ev or not ev.get('start_time') or not ev.get('description') or not ev.get('location'):
+            dom_ev = extract_event_from_dom(soup)
+            ev = ev or {}
+            for k in ('name', 'description', 'start_time', 'location'):
+                if not ev.get(k) and dom_ev.get(k):
+                    ev[k] = dom_ev[k]
+
+        if not ev.get('name'):
+            ev['name'] = f"Event {event_id}"
+        if not ev.get('description'):
+            ev['description'] = "Find tickets & information for this event."
+        if not ev.get('location'):
+            ev['location'] = None
+        if not ev.get('start_time'):
+            ev['start_time'] = None
+
+        pretty = None
+        if ev.get('start_time'):
+            try:
+                dt = dateparser.parse(ev['start_time'])
+                if isinstance(dt, datetime):
+                    tz_offset = dt.utcoffset()
+                    if tz_offset is not None:
+                        total_minutes = int(tz_offset.total_seconds() // 60)
+                        hh = total_minutes // 60
+                        mm = abs(total_minutes) % 60
+                        tz_str = f"UTC{'+' if hh >= 0 else '-'}{abs(hh):02d}:{mm:02d}"
+                    else:
+                        tz_str = ''
+                    pretty = dt.strftime('%a, %d %b %Y at %I:%M %p')
+                    if tz_str:
+                        pretty = f"{pretty} ({tz_str})"
+            except Exception:
+                pretty = ev.get('start_time')
+
+        ev['start_time_pretty'] = pretty or ev.get('start_time') or '(unknown)'
+        ev['external_url'] = url
+        ev['external_id'] = event_id
+        return jsonify(ev)
+    except Exception as e:
+        return jsonify({'error': 'Exception during fetch', 'detail': str(e)}), 500
+
+@app.route('/api/save_event', methods=['POST'])
+def api_save_event():
+    if 'user_id' not in session:
+        flash("Please log in to save events.", "danger")
+        return jsonify({'error': 'authentication required'}), 401
+
+    user = User.query.get(session['user_id'])
+    if not user:
+        flash("Invalid user.", "danger")
+        return jsonify({'error': 'invalid user'}), 401
+
+    payload = request.get_json() or {}
+    title = payload.get('name') or payload.get('title')
+    description = payload.get('description')
+    location = payload.get('location')
+    start_time_raw = payload.get('start_time')
+    importance = payload.get('importance', 'normal')
+    notification_enabled = payload.get('notification_enabled', False)
+    reminder_time = int(payload.get('reminder_time', 0)) if notification_enabled else None
+
+    if not title or not start_time_raw:
+        flash("Event must have a title and start time.", "danger")
+        return jsonify({'error': 'title and start_time required'}), 400
+
+    dt = None
+    try:
+        dt = try_parse_date(start_time_raw) or dateparser.parse(start_time_raw)
+    except Exception:
+        dt = None
+
+    if dt and dt.tzinfo is None:
+        dt = dt.replace(tzinfo=ZoneInfo("UTC"))
+
+    if user.timezone and dt:
+        try:
+            dt_local = dt.astimezone(ZoneInfo(user.timezone))
+        except Exception:
+            dt_local = dt
+    else:
+        dt_local = dt
+
+    start_time_to_store = dt_local.isoformat() if isinstance(dt_local, datetime) else start_time_raw
+
+    existing = Event.query.filter_by(
+        user_id=user.id,
+        title=title,
+        date=start_time_to_store.split("T")[0] if start_time_to_store else None,
+        time=start_time_to_store.split("T")[1][:5] if start_time_to_store else None
+    ).first()
+
+    if existing:
+        flash("Event already saved.", "info")
+        return jsonify({'message': 'Event already saved', 'event': existing.to_dict()}), 200
+
+    new_event = Event(
+        title=title,
+        date=start_time_to_store.split("T")[0] if start_time_to_store else None,
+        time=start_time_to_store.split("T")[1][:5] if start_time_to_store else None,
+        description=description,
+        location=location,
+        user_id=user.id,
+        notification_enabled=notification_enabled,
+        reminder_time=reminder_time,
+        importance=importance
+    )
+
+    try:
+        db.session.add(new_event)
+        db.session.commit()
+
+        if notification_enabled and reminder_time:
+            schedule_notification(new_event, reminder_time)
+
+        flash("Event saved successfully!", "success")
+        return jsonify({'message': 'Event saved', 'event': new_event.to_dict()}), 201
+
+    except Exception as e:
+        db.session.rollback()
+        flash("An error occurred while saving the event.", "danger")
+        logger.error(f"Error in api_save_event: {e}")
+        return jsonify({'error': 'failed to save event', 'detail': str(e)}), 500
 
 if __name__ == "__main__":
     tiktok_pool = Pool(processes=MAX_TIKTOK_PROCESSES)
